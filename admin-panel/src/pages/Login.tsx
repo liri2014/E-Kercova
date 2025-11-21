@@ -1,12 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { LayoutDashboard } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const { session } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (session) {
+      navigate('/');
+    }
+  }, [session, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
