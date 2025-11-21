@@ -1,10 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Car, Edit2 } from 'lucide-react';
+import { Car, Edit2, Trash2, Plus } from 'lucide-react';
+import { Modal } from '../components/Modal';
+
+interface ParkingZone {
+    id: string;
+    name: string;
+    rate: number;
+    capacity: number;
+    occupied: number;
+}
 
 export const Parking: React.FC = () => {
-    const [zones, setZones] = useState<any[]>([]);
+    const [zones, setZones] = useState<ParkingZone[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [selectedZone, setSelectedZone] = useState<ParkingZone | null>(null);
+    const [formData, setFormData] = useState({ name: '', rate: '', capacity: '' });
 
     const fetchZones = async () => {
         setLoading(true);
@@ -18,17 +32,100 @@ export const Parking: React.FC = () => {
         fetchZones();
     }, []);
 
-    const updateZone = async (id: string) => {
-        const newRate = prompt('Enter new hourly rate (MKD):');
-        if (newRate && !isNaN(Number(newRate))) {
-            await supabase.from('parking_zones').update({ rate: Number(newRate) }).eq('id', id);
-            fetchZones();
+    const handleAdd = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const response = await fetch('http://localhost:3000/api/parking/zones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.name,
+                    rate: Number(formData.rate),
+                    capacity: Number(formData.capacity)
+                })
+            });
+
+            if (response.ok) {
+                setShowAddModal(false);
+                setFormData({ name: '', rate: '', capacity: '' });
+                fetchZones();
+            }
+        } catch (error) {
+            console.error('Error adding zone:', error);
         }
+    };
+
+    const handleEdit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedZone) return;
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/parking/zones/${selectedZone.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formData.name,
+                    rate: Number(formData.rate),
+                    capacity: Number(formData.capacity)
+                })
+            });
+
+            if (response.ok) {
+                setShowEditModal(false);
+                setSelectedZone(null);
+                setFormData({ name: '', rate: '', capacity: '' });
+                fetchZones();
+            }
+        } catch (error) {
+            console.error('Error updating zone:', error);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!selectedZone) return;
+
+        try {
+            const response = await fetch(`http://localhost:3000/api/parking/zones/${selectedZone.id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                setShowDeleteModal(false);
+                setSelectedZone(null);
+                fetchZones();
+            }
+        } catch (error) {
+            console.error('Error deleting zone:', error);
+        }
+    };
+
+    const openEditModal = (zone: ParkingZone) => {
+        setSelectedZone(zone);
+        setFormData({
+            name: zone.name,
+            rate: zone.rate.toString(),
+            capacity: zone.capacity.toString()
+        });
+        setShowEditModal(true);
+    };
+
+    const openDeleteModal = (zone: ParkingZone) => {
+        setSelectedZone(zone);
+        setShowDeleteModal(true);
     };
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-slate-900">Parking Management</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold text-slate-900">Parking Management</h1>
+                <button
+                    onClick={() => setShowAddModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+                >
+                    <Plus size={20} />
+                    Add Zone
+                </button>
+            </div>
 
             {loading ? (
                 <div className="text-center py-20 text-slate-500">Loading zones...</div>
@@ -50,9 +147,20 @@ export const Parking: React.FC = () => {
                                             <p className="text-sm text-slate-500">{zone.capacity} Spaces</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => updateZone(zone.id)} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-lg transition-colors">
-                                        <Edit2 size={18} />
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => openEditModal(zone)}
+                                            className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-lg transition-colors"
+                                        >
+                                            <Edit2 size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => openDeleteModal(zone)}
+                                            className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="space-y-4">
@@ -81,6 +189,116 @@ export const Parking: React.FC = () => {
                     })}
                 </div>
             )}
+
+            {/* Add Zone Modal */}
+            <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add Parking Zone">
+                <form onSubmit={handleAdd} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Zone Name</label>
+                        <input
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            placeholder="e.g., Zone A"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Hourly Rate (MKD)</label>
+                        <input
+                            type="number"
+                            required
+                            value={formData.rate}
+                            onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            placeholder="e.g., 50"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Total Spaces</label>
+                        <input
+                            type="number"
+                            required
+                            value={formData.capacity}
+                            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            placeholder="e.g., 100"
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all"
+                    >
+                        Create Zone
+                    </button>
+                </form>
+            </Modal>
+
+            {/* Edit Zone Modal */}
+            <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Parking Zone">
+                <form onSubmit={handleEdit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Zone Name</label>
+                        <input
+                            type="text"
+                            required
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Hourly Rate (MKD)</label>
+                        <input
+                            type="number"
+                            required
+                            value={formData.rate}
+                            onChange={(e) => setFormData({ ...formData, rate: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Total Spaces</label>
+                        <input
+                            type="number"
+                            required
+                            value={formData.capacity}
+                            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all"
+                    >
+                        Update Zone
+                    </button>
+                </form>
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="Delete Parking Zone">
+                <div className="space-y-4">
+                    <p className="text-slate-600">
+                        Are you sure you want to delete <strong>{selectedZone?.name}</strong>? This action cannot be undone.
+                    </p>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={() => setShowDeleteModal(false)}
+                            className="flex-1 py-2 border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold rounded-lg transition-all"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            className="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-all"
+                        >
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };
