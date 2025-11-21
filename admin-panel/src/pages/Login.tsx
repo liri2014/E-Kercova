@@ -1,4 +1,3 @@
-```
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { LayoutDashboard } from 'lucide-react';
@@ -13,7 +12,7 @@ export const Login: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
-    
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -64,7 +63,7 @@ export const Login: React.FC = () => {
           </div>
 
           {message && (
-            <div className={`p - 4 rounded - xl text - sm ${ message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600' } `}>
+            <div className={`p-4 rounded-xl text-sm ${message.includes('Error') ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
               {message}
             </div>
           )}
@@ -81,4 +80,3 @@ export const Login: React.FC = () => {
     </div>
   );
 };
-```
