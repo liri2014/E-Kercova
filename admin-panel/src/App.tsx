@@ -1,8 +1,39 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
-// ... (imports)
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Dashboard } from './pages/Dashboard';
+import { Login } from './pages/Login';
+import { Reports } from './pages/Reports';
+import { Content } from './pages/Content';
+import { Parking } from './pages/Parking';
+import { LayoutDashboard, FileText, Calendar, Car, LogOut } from 'lucide-react';
 
-// ... (Sidebar component)
+const Sidebar: React.FC = () => {
+    const { signOut } = useAuth();
+
+    return (
+        <div className="w-64 bg-slate-900 text-white h-screen fixed left-0 top-0 p-6 flex flex-col">
+            <div className="flex items-center gap-3 mb-10 px-2">
+                <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center">
+                    <LayoutDashboard size={18} />
+                </div>
+                <span className="font-bold text-lg">E-Kicevo Admin</span>
+            </div>
+
+            <nav className="space-y-2 flex-1">
+                <NavItem to="/" icon={<LayoutDashboard size={20} />} label="Overview" />
+                <NavItem to="/reports" icon={<FileText size={20} />} label="Reports" />
+                <NavItem to="/content" icon={<Calendar size={20} />} label="News & Events" />
+                <NavItem to="/parking" icon={<Car size={20} />} label="Parking" />
+            </nav>
+
+            <button onClick={signOut} className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all mt-auto">
+                <LogOut size={20} />
+                <span className="font-medium">Sign Out</span>
+            </button>
+        </div>
+    );
+};
 
 const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string }> = ({ to, icon, label }) => (
     <Link to={to} className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
