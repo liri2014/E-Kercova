@@ -1,0 +1,8 @@
+{
+  "name": "Municipal Problem Reporter",
+  "description": "An application for citizens to report local issues like potholes or garbage by taking a photo. The app automatically captures the location and uses AI to suggest a title and category for the report.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}

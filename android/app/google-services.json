@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "499705620236",
+    "project_id": "com-ekicevo-app",
+    "storage_bucket": "com-ekicevo-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:499705620236:android:9ffe4db94f92bf335fcb29",
+        "android_client_info": {
+          "package_name": "com.ekicevo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCe_knnw6lI_AvZu02NTIZaX_RrsS8HNgU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,42 @@
+{
+  "name": "municipal-problem-reporter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "mobile:sync": "npm run build && npx cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/camera": "^7.0.2",
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/core": "^7.4.4",
+    "@capacitor/geolocation": "^7.1.5",
+    "@capacitor/ios": "^7.4.4",
+    "@capacitor/preferences": "^7.0.2",
+    "@capacitor/push-notifications": "^7.0.3",
+    "@capacitor/splash-screen": "^7.0.3",
+    "@google/genai": "^1.28.0",
+    "@supabase/supabase-js": "^2.84.0",
+    "autoprefixer": "^10.4.22",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.554.0",
+    "postcss": "^8.5.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6",
+    "recharts": "^3.4.1",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.1.17"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
