@@ -35,7 +35,7 @@ export const Login: React.FC = () => {
             <LayoutDashboard size={32} />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">Admin Portal</h1>
-          <p className="text-slate-500">Sign in to manage E-Kicevo</p>
+          <p className="text-slate-500">Sign in to manage E-Kicevo (v1.1)</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
