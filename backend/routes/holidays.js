@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { supabase } = require('../supabaseClient');
+const supabase = require('../supabaseClient');
 
 // GET /api/holidays/:year
 // Fetch North Macedonia holidays from public API
