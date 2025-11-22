@@ -37,10 +37,21 @@ app.use('/api/holidays', holidaysRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/events', eventsRoutes);
 
+// Health check endpoint for Railway keep-alive monitoring
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        uptime: process.uptime()
+    });
+});
+
 app.get('/', (req, res) => {
     res.send('E-Kicevo Backend is running');
 });
 
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${port}`);
+    console.log(`Accessible from network at http://192.168.0.2:${port}`);
 });
