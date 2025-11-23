@@ -2,6 +2,9 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ReportCategory, GeolocationState, Transaction, ParkingZone, NewsItem, NewsStatus, NewsType, Report } from './types';
 import { api } from './services/api';
 import { useTranslation } from './i18n';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { App as CapacitorApp } from '@capacitor/app';
+import { supabase } from './supabase';
 
 // Destructure for easier usage in component, or just use api.method
 const { getParkingZones, payParking: payForParking, getEvents, getNews } = api;
@@ -37,7 +40,9 @@ const Icons = {
     plus: "M12 5v14M5 12h14",
     clock: "M12 6v6l4 2",
     creditCard: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
-    map: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
+    map: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7",
+    history: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M12 7v5l4 2",
+    x: "M18 6L6 18M6 6l12 12"
 };
 
 // --- UI Components ---
@@ -78,21 +83,48 @@ const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = ({ class
 // --- App Component ---
 export const App: React.FC = () => {
     const { t, language, setLanguage } = useTranslation();
-    const [activeView, setActiveView] = useState('dashboard');
+    const [activeView, setActiveView] = useState(() => localStorage.getItem('lastActiveView') || 'dashboard');
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+    // Lifted photos state for camera restoration
+    const [photos, setPhotos] = useState<string[]>(() => {
+        const stored = localStorage.getItem('reportPhotos');
+        return stored ? JSON.parse(stored) : [];
+    });
+
+    useEffect(() => {
+        localStorage.setItem('reportPhotos', JSON.stringify(photos));
+    }, [photos]);
+
+    useEffect(() => {
+        localStorage.setItem('lastActiveView', activeView);
+    }, [activeView]);
     const [isVerified, setIsVerified] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
     const [showVerificationInput, setShowVerificationInput] = useState(false);
     const [walletBalance, setWalletBalance] = useState(1250);
 
-    // Initialize theme
+    // Initialize theme with system preference
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else {
+            // Detect system theme
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            setTheme(prefersDark ? 'dark' : 'light');
+        }
+    }, []);
+
+    // Apply theme changes
     useEffect(() => {
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
         } else {
             document.documentElement.classList.remove('dark');
         }
+        localStorage.setItem('theme', theme);
     }, [theme]);
 
     // Check verification
@@ -101,19 +133,84 @@ export const App: React.FC = () => {
         if (verified) setIsVerified(true);
     }, []);
 
-    const handleVerify = () => {
-        if (verificationCode === '123456') {
-            localStorage.setItem('isVerified', 'true');
-            setIsVerified(true);
-        } else {
+    // Handle Android back button and App Restoration (Camera)
+    useEffect(() => {
+        let backButtonListener: any;
+        let restoreListener: any;
+
+        const setupListeners = async () => {
+            backButtonListener = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+                if (activeView !== 'dashboard') {
+                    setActiveView('dashboard');
+                } else if (canGoBack) {
+                    window.history.back();
+                } else {
+                    CapacitorApp.exitApp();
+                }
+            });
+
+            // Handle camera result when app is restored after being killed
+            restoreListener = await CapacitorApp.addListener('appRestoredResult', (data: any) => {
+                if (data.pluginId === 'Camera' && data.methodName === 'getPhoto' && data.success) {
+                    const imagePath = data.data.webPath;
+                    if (imagePath) {
+                        // Fetch and save the restored photo
+                        fetch(imagePath)
+                            .then(res => res.blob())
+                            .then(blob => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                    if (typeof reader.result === 'string') {
+                                        // Update state directly
+                                        setPhotos(prev => [...prev, reader.result as string]);
+                                        // Navigate to report view to show the photo
+                                        setActiveView('report');
+                                    }
+                                };
+                                reader.readAsDataURL(blob);
+                            })
+                            .catch(err => console.error('Error recovering photo:', err));
+                    }
+                }
+            });
+        };
+
+        setupListeners();
+
+        return () => {
+            if (backButtonListener) backButtonListener.remove();
+            if (restoreListener) restoreListener.remove();
+        };
+    }, [activeView]);
+
+    const handleVerify = async () => {
+        try {
+            // Format phone number the same way as when sending the code
+            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+389${phoneNumber}`;
+
+            const { data, error } = await supabase.auth.verifyOtp({
+                phone: formattedPhone,
+                token: verificationCode,
+                type: 'sms'
+            });
+
+            if (error) {
+                alert(t('error_code_mismatch'));
+                console.error('Verification error:', error);
+            } else {
+                localStorage.setItem('isVerified', 'true');
+                setIsVerified(true);
+            }
+        } catch (err) {
             alert(t('error_code_mismatch'));
+            console.error('Verification error:', err);
         }
     };
 
     const renderContent = () => {
         switch (activeView) {
             case 'dashboard': return <HomeView onViewChange={setActiveView} walletBalance={walletBalance} />;
-            case 'report': return <ReportView onViewChange={setActiveView} />;
+            case 'report': return <ReportView onViewChange={setActiveView} photos={photos} setPhotos={setPhotos} />;
             case 'parking': return <ParkingView walletBalance={walletBalance} setWalletBalance={setWalletBalance} />;
             case 'events': return <EventsView />;
             case 'news': return <NewsView />;
@@ -122,6 +219,33 @@ export const App: React.FC = () => {
             case 'history': return <HistoryView />;
             case 'menu': return <MenuHub onViewChange={setActiveView} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
             default: return <HomeView onViewChange={setActiveView} walletBalance={walletBalance} />;
+        }
+    };
+
+    const handleSendCode = async () => {
+        if (phoneNumber.length < 8) {
+            alert(t('error_phone_invalid'));
+            return;
+        }
+
+        try {
+            // Format phone number with country code (assuming Macedonia +389)
+            const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+389${phoneNumber}`;
+
+            const { data, error } = await supabase.auth.signInWithOtp({
+                phone: formattedPhone
+            });
+
+            if (error) {
+                alert(`Error: ${error.message}`);
+                console.error('Send OTP error:', error);
+            } else {
+                setShowVerificationInput(true);
+                alert(t('code_sent'));
+            }
+        } catch (err) {
+            alert(`Error sending code: ${err}`);
+            console.error('Send OTP error:', err);
         }
     };
 
@@ -143,14 +267,7 @@ export const App: React.FC = () => {
                                 value={phoneNumber}
                                 onChange={(e) => setPhoneNumber(e.target.value)}
                             />
-                            <Button fullWidth onClick={() => {
-                                if (phoneNumber.length < 8) {
-                                    alert(t('error_phone_invalid'));
-                                    return;
-                                }
-                                setShowVerificationInput(true);
-                                alert(t('demo_code_notice') + ' 123456');
-                            }}>
+                            <Button fullWidth onClick={handleSendCode}>
                                 {t('send_code')}
                             </Button>
                         </div>
@@ -292,61 +409,116 @@ const ServiceCard: React.FC<{ icon: string; title: string; color: string; onClic
     </button>
 );
 
-const ReportView: React.FC<{ onViewChange: (view: string) => void }> = ({ onViewChange }) => {
+const ReportView: React.FC<{ onViewChange: (view: string) => void, photos: string[], setPhotos: React.Dispatch<React.SetStateAction<string[]>> }> = ({ onViewChange, photos, setPhotos }) => {
     const { t } = useTranslation();
-    const fileInputRef = useRef<HTMLInputElement>(null);
-    const [photo, setPhoto] = useState<File | null>(null);
-    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    // Photos state lifted to App component
     const [location, setLocation] = useState<GeolocationState | null>(null);
-    const [description, setDescription] = useState('');
+    const [description, setDescription] = useState(() => localStorage.getItem('reportDescription') || '');
     const [analyzing, setAnalyzing] = useState(false);
-    const [aiResult, setAiResult] = useState<{ title: string; category: ReportCategory } | null>(null);
-    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
+        localStorage.setItem('reportDescription', description);
+    }, [description]);
+
+    // Persist photos to localStorage whenever they change - handled in App component now
+    // But we keep this for consistency if needed, though App handles it.
+    // Actually, App handles it, so we can remove it here to avoid double writes.
+
+    const [aiResult, setAiResult] = useState<{ title: string; category: ReportCategory } | null>(null);
+    const [showSuccess, setShowSuccess] = useState(false);
+    const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+
+    useEffect(() => {
+        // Test Railway connectivity
+        api.testHealth().then(() => {
+            console.log('Railway backend is reachable!');
+        }).catch(err => {
+            console.error('Railway backend is NOT reachable:', err);
+        });
+
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => setLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
                 (err) => {
                     console.error("Location access denied", err);
-                    // Optional: Set a default location or show error state
                 },
                 { timeout: 10000, enableHighAccuracy: true }
             );
         }
     }, []);
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setPhoto(file);
-            const reader = new FileReader();
-            reader.onloadend = () => setPhotoPreview(reader.result as string);
-            reader.readAsDataURL(file);
+    const handleTakePhoto = async (source: CameraSource) => {
+        try {
+            const image = await Camera.getPhoto({
+                quality: 50,
+                width: 1024,
+                height: 1024,
+                allowEditing: false,
+                resultType: CameraResultType.Uri, // Changed to Uri for better stability
+                source: source,
+                saveToGallery: false
+            });
+
+            if (image.webPath) {
+                // Convert blob/url to base64 for display/upload
+                const response = await fetch(image.webPath);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    if (typeof reader.result === 'string') {
+                        // Update state
+                        setPhotos(prev => [...prev, reader.result as string]);
+                        setShowPhotoOptions(false); // Close modal only after photo is added
+                    }
+                };
+                reader.readAsDataURL(blob);
+            }
+        } catch (error) {
+            console.error('Error taking photo:', error);
+            setShowPhotoOptions(false); // Close modal on error
         }
     };
 
+    const removePhoto = (index: number) => {
+        setPhotos(photos.filter((_, i) => i !== index));
+    };
+
     const handleSubmit = async () => {
-        if (!photo || !location) return alert(t('error_required_fields'));
+        if (photos.length === 0 || !location) return alert(t('error_required_fields'));
 
         setAnalyzing(true);
         try {
+            // Get the authenticated user's ID from Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                alert('Please log in to submit a report');
+                setAnalyzing(false);
+                return;
+            }
+
             const formData = new FormData();
-            formData.append('photo', photo);
-            formData.append('user_id', 'test-user-id'); // Replace with real auth ID later
+
+            // Append all photos
+            for (let i = 0; i < photos.length; i++) {
+                const response = await fetch(photos[i]);
+                const blob = await response.blob();
+                const file = new File([blob], `photo_${i}.jpg`, { type: 'image/jpeg' });
+                formData.append('photos', file);
+            }
+
+            formData.append('user_id', user.id); // Use authenticated user's ID
             formData.append('lat', location.latitude.toString());
             formData.append('lng', location.longitude.toString());
             formData.append('description', description);
 
             const report = await api.submitReport(formData);
 
-            // Save locally for history (optional, or just rely on fetching)
             const newReport: Report = {
                 id: report.id,
                 title: report.title,
                 category: report.category as ReportCategory,
                 location,
-                photoPreviewUrl: photoPreview || '',
+                photoPreviewUrl: photos[0] || '',
                 timestamp: report.created_at
             };
 
@@ -354,6 +526,11 @@ const ReportView: React.FC<{ onViewChange: (view: string) => void }> = ({ onView
             const reports = existing ? JSON.parse(existing) : [];
             localStorage.setItem('submittedReports', JSON.stringify([newReport, ...reports]));
 
+            // Clear photos and description after successful submission
+            setPhotos([]);
+            setDescription('');
+            localStorage.removeItem('reportPhotos');
+            localStorage.removeItem('reportDescription');
             setAiResult({ title: report.title, category: report.category as ReportCategory });
             setShowSuccess(true);
         } catch (e) {
@@ -382,28 +559,64 @@ const ReportView: React.FC<{ onViewChange: (view: string) => void }> = ({ onView
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('submit_new_report')}</h2>
 
             {/* Photo Upload */}
-            <div
-                onClick={() => fileInputRef.current?.click()}
-                className={`relative aspect-video rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all hover:border-indigo-400 ${photoPreview ? 'border-none' : 'bg-slate-50 dark:bg-slate-800'}`}
-            >
-                {photoPreview ? (
-                    <>
-                        <img src={photoPreview} alt={t('preview')} className="w-full h-full object-cover" />
-                        <div className="absolute bottom-4 right-4 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full text-white text-sm font-medium flex items-center gap-2">
-                            <Icon path={Icons.camera} size={16} /> {t('change_photo')}
-                        </div>
-                    </>
+            <div className="space-y-4">
+                {photos.length > 0 ? (
+                    <div className="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+                        {photos.map((p, index) => (
+                            <div key={index} className="relative flex-shrink-0 w-40 h-40 rounded-xl overflow-hidden group">
+                                <img src={p} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                                <button
+                                    onClick={() => removePhoto(index)}
+                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Icon path={Icons.x} size={16} />
+                                </button>
+                            </div>
+                        ))}
+                        {photos.length < 5 && (
+                            <button
+                                onClick={() => setShowPhotoOptions(true)}
+                                className="flex-shrink-0 w-40 h-40 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-500 hover:text-indigo-500 transition-colors"
+                            >
+                                <Icon path={Icons.plus} size={32} />
+                                <span className="text-xs mt-2">{t('add_photo')}</span>
+                            </button>
+                        )}
+                    </div>
                 ) : (
-                    <div className="text-center p-6">
-                        <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <Icon path={Icons.camera} size={28} />
+                    <div
+                        onClick={() => setShowPhotoOptions(true)}
+                        className="relative aspect-video rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center cursor-pointer overflow-hidden transition-all hover:border-indigo-400 bg-slate-50 dark:bg-slate-800"
+                    >
+                        <div className="flex flex-col items-center gap-3 text-slate-400">
+                            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                                <Icon path={Icons.camera} size={32} />
+                            </div>
+                            <p className="font-medium">{t('tap_to_take_photo')}</p>
                         </div>
-                        <p className="font-semibold text-slate-700 dark:text-slate-300">{t('add_photo_prompt')}</p>
-                        <p className="text-xs text-slate-400 mt-1">{t('use_camera_gallery')}</p>
                     </div>
                 )}
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
             </div>
+
+            {/* Photo Options Modal */}
+            {showPhotoOptions && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setShowPhotoOptions(false)}>
+                    <div className="bg-white dark:bg-slate-900 rounded-t-3xl w-full max-w-md p-6 space-y-3" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">{t('add_photo')}</h3>
+                        <Button fullWidth variant="secondary" onClick={() => handleTakePhoto(CameraSource.Camera)}>
+                            <Icon path={Icons.camera} size={20} />
+                            {t('take_photo')}
+                        </Button>
+                        <Button fullWidth variant="secondary" onClick={() => handleTakePhoto(CameraSource.Photos)}>
+                            <Icon path={Icons.news} size={20} />
+                            {t('choose_from_gallery')}
+                        </Button>
+                        <Button fullWidth variant="ghost" onClick={() => setShowPhotoOptions(false)}>
+                            {t('cancel')}
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Location Status */}
             <div className={`flex items-center gap-3 p-3 rounded-2xl border ${location ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-900/50' : 'bg-amber-50 border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/50'}`}>
@@ -431,36 +644,9 @@ const ReportView: React.FC<{ onViewChange: (view: string) => void }> = ({ onView
                 />
             </div>
 
-            {/* AI Analysis Result */}
-            {(analyzing || aiResult) && (
-                <div className="animate-fade-in">
-                    <div className="flex items-center justify-between mb-2 ml-1">
-                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t('category')}</label>
-                        {analyzing && <span className="text-xs text-indigo-600 font-medium animate-pulse">{t('analyzing')}</span>}
-                    </div>
-                    <Select
-                        value={aiResult?.category || ''}
-                        disabled={analyzing}
-                        onChange={(e) => setAiResult(prev => prev ? { ...prev, category: e.target.value as ReportCategory } : null)}
-                    >
-                        <option value="">{analyzing ? t('analyzing') : t('submitted_category')}</option>
-                        {Object.values(ReportCategory).map(c => (
-                            <option key={c} value={c}>{t(c)}</option>
-                        ))}
-                    </Select>
-
-                    {aiResult?.title && (
-                        <div className="mt-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800/50">
-                            <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">AI Suggested Title</span>
-                            <p className="font-semibold text-indigo-900 dark:text-indigo-100 mt-1">{aiResult.title}</p>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            <Button fullWidth onClick={handleSubmit} disabled={!photo || description.length < 5 || analyzing}>
+            <Button fullWidth onClick={handleSubmit} disabled={photos.length === 0 || description.length < 5 || analyzing}>
                 {analyzing ? <span className="animate-spin mr-2">⟳</span> : null}
-                {t('submit_report')}
+                {analyzing ? t('submitting') : t('submit_report')}
             </Button>
         </div>
     );
@@ -488,8 +674,16 @@ const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b: numbe
 
         setLoading(true);
         try {
+            // Get the authenticated user's ID from Supabase
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                alert('Please log in to pay for parking');
+                setLoading(false);
+                return;
+            }
+
             await payForParking({
-                user_id: 'test-user-id', // Replace with real auth ID
+                user_id: user.id, // Use authenticated user's ID
                 zone_id: selectedZone.id,
                 duration: hours,
                 plate_number: plate,
@@ -499,7 +693,6 @@ const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b: numbe
             setWalletBalance(walletBalance - totalCost);
             alert(t('payment_successful'));
             setPlate('');
-            // refresh zones
             const updated = await getParkingZones();
             setZones(updated);
         } catch (e) {
@@ -509,78 +702,167 @@ const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b: numbe
         }
     };
 
+    const totalCost = selectedZone ? selectedZone.rate * hours : 0;
+
     return (
         <div className="space-y-6 pb-20">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('pay_parking')}</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('pay_for_parking')}</h2>
 
-            {/* Zone Selection */}
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">{t('select_zone')}</label>
-                <Select
-                    value={selectedZone?.id || ''}
-                    onChange={(e) => setSelectedZone(zones.find(z => z.id === e.target.value) || null)}
-                >
-                    {zones.map(z => (
-                        <option key={z.id} value={z.id}>{z.name} ({z.rate} MKD/hr)</option>
-                    ))}
-                </Select>
+            {/* Horizontal Scrolling Zone Cards */}
+            <div className="overflow-x-auto -mx-4 px-4 no-scrollbar">
+                <div className="flex gap-4 pb-2">
+                    {zones.map(zone => {
+                        const isSelected = selectedZone?.id === zone.id;
+                        const totalCapacity = zone.capacity || 0;
+                        const occupiedSpots = zone.occupied || 0;
+                        const availableSpots = totalCapacity - occupiedSpots;
+                        const isAvailable = availableSpots > 0;
+
+                        return (
+                            <button
+                                key={zone.id}
+                                onClick={() => setSelectedZone(zone)}
+                                className={`relative flex-shrink-0 w-40 h-36 rounded-3xl p-4 flex flex-col justify-between transition-all ${isSelected
+                                    ? 'bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-lg shadow-indigo-600/30 scale-105'
+                                    : 'bg-slate-800 dark:bg-slate-800 text-white hover:scale-105'
+                                    }`}
+                            >
+                                {/* Availability Indicator */}
+                                <div className="absolute top-3 right-3">
+                                    <div className={`w-2.5 h-2.5 rounded-full ${isAvailable ? 'bg-green-400' : 'bg-red-400'}`} />
+                                </div>
+
+                                <div>
+                                    <h3 className="text-xl font-bold">{zone.name}</h3>
+                                    <p className={`text-xs mt-0.5 ${isSelected ? 'text-indigo-100' : 'text-slate-400'}`}>MKD/hr</p>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <p className="text-2xl font-bold">{zone.rate}</p>
+                                    <p className={`text-[10px] ${isSelected ? 'text-indigo-100' : 'text-slate-400'}`}>
+                                        {availableSpots}/{totalCapacity} {t('free')}
+                                    </p>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
-            {/* Duration & Plate */}
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">{t('duration_hours')}</label>
-                    <input
-                        type="number"
-                        min="1"
-                        max="24"
-                        value={hours}
-                        onChange={(e) => setHours(parseInt(e.target.value) || 1)}
-                        className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-slate-900 dark:text-white"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">{t('license_plate')}</label>
+            {/* License Plate Input */}
+            <div className="space-y-2">
+                <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                        <div className="w-10 h-6 bg-blue-600 rounded flex items-center justify-center">
+                            <span className="text-white text-[10px] font-bold">NMK</span>
+                        </div>
+                    </div>
                     <input
                         type="text"
                         placeholder="SK-1234-AB"
                         value={plate}
                         onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                        className="w-full p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-slate-900 dark:text-white uppercase"
+                        className="w-full h-14 pl-16 pr-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-slate-900 dark:text-white text-lg font-semibold uppercase tracking-wider"
                     />
                 </div>
             </div>
 
+            {/* Duration Selector */}
+            <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <span className="text-lg font-semibold text-slate-900 dark:text-white">{t('duration')}</span>
+                    <span className="text-3xl font-bold text-slate-900 dark:text-white">{hours} hrs</span>
+                </div>
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => setHours(Math.max(1, hours - 1))}
+                        className="flex-1 h-14 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl flex items-center justify-center text-2xl font-bold text-slate-900 dark:text-white transition-colors"
+                    >
+                        -
+                    </button>
+                    <button
+                        onClick={() => setHours(Math.min(24, hours + 1))}
+                        className="flex-1 h-14 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl flex items-center justify-center text-2xl font-bold text-slate-900 dark:text-white transition-colors"
+                    >
+                        +
+                    </button>
+                </div>
+            </Card>
+
             {/* Cost Summary */}
             {selectedZone && (
-                <div className="p-6 bg-indigo-50 dark:bg-indigo-900/20 rounded-3xl border border-indigo-100 dark:border-indigo-800/50 flex items-center justify-between">
-                    <div>
-                        <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">{t('total_cost')}</p>
-                        <p className="text-3xl font-bold text-indigo-900 dark:text-indigo-100">{selectedZone.rate * hours} <span className="text-lg font-normal">MKD</span></p>
+                <Card className="p-6 bg-slate-50 dark:bg-slate-800/50">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{t('zone')}</span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{selectedZone.name}</span>
                     </div>
-                    <div className="text-right">
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{selectedZone.name}</p>
-                        <p className="text-xs text-slate-400">{hours} {hours === 1 ? 'hour' : 'hours'}</p>
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">{t('rate')}</span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">{selectedZone.rate} MKD</span>
                     </div>
-                </div>
+                    <div className="h-px bg-slate-200 dark:bg-slate-700 mb-4" />
+                    <div className="flex items-center justify-between">
+                        <span className="text-lg font-semibold text-slate-900 dark:text-white">{t('total_cost')}</span>
+                        <span className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{totalCost} <span className="text-lg font-normal">MKD</span></span>
+                    </div>
+                </Card>
             )}
 
-            <Button fullWidth onClick={handlePay} disabled={loading || !selectedZone || !plate}>
-                {loading ? <span className="animate-spin mr-2">⟳</span> : <Icon path={Icons.creditCard} className="mr-2" size={20} />}
-                {t('pay_now')}
+            {/* Pay Button */}
+            <Button fullWidth onClick={handlePay} disabled={loading || !selectedZone || !plate} className="h-14 text-lg">
+                {loading ? <span className="animate-spin mr-2">⟳</span> : null}
+                {t('pay_for_parking')}
             </Button>
         </div>
     );
 };
 
 const EventsView: React.FC = () => {
-    const { t } = useTranslation();
-    const [events, setEvents] = useState<any>(null);
+    const { t, language } = useTranslation();
+    const [events, setEvents] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
     useEffect(() => {
-        getEvents().then(setEvents);
+        const fetchEvents = async () => {
+            try {
+                setLoading(true);
+                const data = await getEvents();
+                setEvents(data || []);
+                setError(null);
+            } catch (err) {
+                console.error('Failed to fetch events:', err);
+                setError('Failed to load events');
+                setEvents([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchEvents();
     }, []);
+
+    if (loading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-slate-500">{t('loading')}</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="h-full flex items-center justify-center p-6">
+                <div className="text-center">
+                    <Icon path={Icons.alertCircle} size={48} className="text-red-500 mx-auto mb-4" />
+                    <p className="text-slate-500">{error}</p>
+                </div>
+            </div>
+        );
+    }
 
     // Simple calendar generation logic
     const getDaysInMonth = (date: Date) => {
@@ -596,10 +878,19 @@ const EventsView: React.FC = () => {
     const padding = Array.from({ length: firstDay }, (_, i) => null);
 
     const getEventForDay = (day: number) => {
-        if (!events) return null;
-        const key = `${selectedDate.getMonth() + 1}-${day}`;
-        if (events.holidays[key]) return { type: 'holiday', title: t(events.holidays[key]) };
-        if (events.municipalEvents[key]) return { type: 'event', title: t(events.municipalEvents[key]) };
+        const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const event = events.find(e => {
+            // Extract date portion from timestamp (e.g., "2025-12-01 02:12:51..." -> "2025-12-01")
+            const eventDate = e.date ? e.date.split('T')[0].split(' ')[0] : '';
+            return eventDate === dateStr;
+        });
+        if (event) {
+            const titleKey = `title_${language}` as 'title_en' | 'title_mk' | 'title_sq';
+            return {
+                type: event.is_holiday ? 'holiday' : 'event',
+                title: event[titleKey] || event.title_en || event.title
+            };
+        }
         return null;
     };
 
@@ -665,26 +956,55 @@ const EventsView: React.FC = () => {
 const NewsView: React.FC = () => {
     const { t } = useTranslation();
     const [news, setNews] = useState<NewsItem[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getNews().then(setNews);
+        getNews().then(data => {
+            setNews(data);
+            setLoading(false);
+        }).catch(err => {
+            console.error('Failed to fetch news:', err);
+            setLoading(false);
+        });
     }, []);
 
+    const formatDate = (dateString: string) => {
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'N/A';
+            return date.toLocaleDateString();
+        } catch {
+            return 'N/A';
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <p className="text-slate-500">{t('loading')}</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-20">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('news')}</h2>
-            {news.map(item => (
-                <Card key={item.id} className="p-5 flex flex-col gap-3">
-                    <div className="flex justify-between items-start">
-                        <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${item.type === NewsType.CONSTRUCTION ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                            {item.type}
-                        </span>
-                        <span className="text-xs text-slate-400">{new Date(item.startDate).toLocaleDateString()}</span>
-                    </div>
-                    <h3 className="font-bold text-lg text-slate-900 dark:text-white">{t(item.title)}</h3>
-                    <p className="text-sm text-slate-500">{t(item.description)}</p>
-                </Card>
-            ))}
+            {news.length === 0 ? (
+                <p className="text-slate-500 text-center py-10">No news available</p>
+            ) : (
+                news.map(item => (
+                    <Card key={item.id} className="p-5 flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                            <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${item.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+                                {item.type}
+                            </span>
+                            <span className="text-xs text-slate-400">{formatDate(item.start_date)}</span>
+                        </div>
+                        <h3 className="font-bold text-lg text-slate-900 dark:text-white">{item.title}</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{item.description}</p>
+                    </Card>
+                ))
+            )}
         </div>
     );
 };
