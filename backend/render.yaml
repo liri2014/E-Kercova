@@ -3,7 +3,7 @@ services:
     name: e-kicevo-backend
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm ci --omit=dev
     startCommand: node server.js
     envVars:
       - key: NODE_ENV
