@@ -75,7 +75,7 @@ export const Reports: React.FC = () => {
                     >
                         <option value="all">All Statuses</option>
                         <option value="pending">Pending</option>
-                        <option value="in_progress">In Progress</option>
+                        <option value="in-progress">In Progress</option>
                         <option value="resolved">Resolved</option>
                     </select>
                 </div>
@@ -143,7 +143,7 @@ export const Reports: React.FC = () => {
                                         className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     >
                                         <option value="pending">Pending</option>
-                                        <option value="in_progress">In Progress</option>
+                                        <option value="in-progress">In Progress</option>
                                         <option value="resolved">Resolved</option>
                                     </select>
                                 </div>
