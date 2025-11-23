@@ -9,7 +9,15 @@ export const Reports: React.FC = () => {
 
     const fetchReports = async () => {
         setLoading(true);
-        let query = supabase.from('reports').select('*').order('created_at', { ascending: false });
+        let query = supabase
+            .from('reports')
+            .select(`
+                *,
+                profiles:user_id (
+                    phone
+                )
+            `)
+            .order('created_at', { ascending: false });
         if (filter !== 'all') {
             query = query.eq('status', filter);
         }
@@ -24,14 +32,24 @@ export const Reports: React.FC = () => {
     }, [filter]);
 
     const updateStatus = async (id: string, status: string) => {
-        await supabase.from('reports').update({ status }).eq('id', id);
-        fetchReports();
+        const { error } = await supabase.from('reports').update({ status }).eq('id', id);
+        if (error) {
+            console.error(error);
+            alert(`Failed to update status: ${error.message}`);
+        } else {
+            fetchReports();
+        }
     };
 
     const deleteReport = async (id: string) => {
         if (confirm('Are you sure you want to delete this report?')) {
-            await supabase.from('reports').delete().eq('id', id);
-            fetchReports();
+            const { error } = await supabase.from('reports').delete().eq('id', id);
+            if (error) {
+                console.error(error);
+                alert(`Failed to delete report: ${error.message}`);
+            } else {
+                fetchReports();
+            }
         }
     };
 
@@ -95,6 +113,12 @@ export const Reports: React.FC = () => {
                                 <p className="text-slate-600 mb-4 line-clamp-2">{report.description}</p>
 
                                 <div className="flex items-center gap-6 text-sm text-slate-500">
+                                    {report.profiles?.phone && (
+                                        <div className="flex items-center gap-2 font-medium text-slate-700">
+                                            <span>📱</span>
+                                            <span>{report.profiles.phone}</span>
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-2">
                                         <MapPin size={16} />
                                         <span>{report.lat.toFixed(4)}, {report.lng.toFixed(4)}</span>
@@ -111,12 +135,17 @@ export const Reports: React.FC = () => {
                                     )}
                                 </div>
 
-                                <div className="mt-4 flex gap-2">
-                                    {report.status !== 'in_progress' && report.status !== 'resolved' && (
-                                        <button onClick={() => updateStatus(report.id, 'in_progress')} className="text-sm font-medium text-blue-600 hover:underline">
-                                            Mark In Progress
-                                        </button>
-                                    )}
+                                <div className="mt-4">
+                                    <label className="text-xs font-medium text-slate-500 mb-1 block">Change Status</label>
+                                    <select
+                                        value={report.status}
+                                        onChange={(e) => updateStatus(report.id, e.target.value)}
+                                        className="px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="pending">Pending</option>
+                                        <option value="in_progress">In Progress</option>
+                                        <option value="resolved">Resolved</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>

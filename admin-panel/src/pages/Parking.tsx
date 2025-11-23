@@ -12,7 +12,9 @@ interface ParkingZone {
 }
 
 export const Parking: React.FC = () => {
+    const [activeTab, setActiveTab] = useState<'zones' | 'transactions'>('zones');
     const [zones, setZones] = useState<ParkingZone[]>([]);
+    const [transactions, setTransactions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
@@ -30,6 +32,7 @@ export const Parking: React.FC = () => {
 
     useEffect(() => {
         fetchZones();
+        fetchTransactions();
     }, []);
 
     const handleAdd = async (e: React.FormEvent) => {
@@ -114,22 +117,54 @@ export const Parking: React.FC = () => {
         setShowDeleteModal(true);
     };
 
+    const fetchTransactions = async () => {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('transactions')
+            .select(`
+                *,
+                parking_zones:zone_id (name),
+                profiles:user_id (phone)
+            `)
+            .order('created_at', { ascending: false });
+        if (error) console.error(error);
+        else setTransactions(data || []);
+        setLoading(false);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold text-slate-900">Parking Management</h1>
+                {activeTab === 'zones' && (
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+                    >
+                        <Plus size={20} />
+                        Add Zone
+                    </button>
+                )}
+            </div>
+
+            <div className="flex gap-4 border-b border-slate-200">
                 <button
-                    onClick={() => setShowAddModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+                    onClick={() => setActiveTab('zones')}
+                    className={`pb-4 px-2 font-medium transition-all ${activeTab === 'zones' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                    <Plus size={20} />
-                    Add Zone
+                    Parking Zones
+                </button>
+                <button
+                    onClick={() => setActiveTab('transactions')}
+                    className={`pb-4 px-2 font-medium transition-all ${activeTab === 'transactions' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    Transactions
                 </button>
             </div>
 
             {loading ? (
-                <div className="text-center py-20 text-slate-500">Loading zones...</div>
-            ) : (
+                <div className="text-center py-20 text-slate-500">Loading...</div>
+            ) : activeTab === 'zones' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {zones.map((zone) => {
                         const occupancyRate = (zone.occupied / zone.capacity) * 100;
@@ -187,6 +222,55 @@ export const Parking: React.FC = () => {
                             </div>
                         );
                     })}
+                </div>
+            ) : (
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">User</th>
+                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Zone</th>
+                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">License Plate</th>
+                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Duration</th>
+                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-slate-200">
+                                {transactions.map((transaction) => (
+                                    <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-medium text-slate-900">📱</span>
+                                                <span className="text-sm text-slate-700">{transaction.profiles?.phone || 'N/A'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-sm font-medium text-slate-900">{transaction.parking_zones?.name || 'Unknown'}</span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-sm text-slate-700 font-mono bg-slate-50 px-2 py-1 rounded">{transaction.plate_number}</span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-sm text-slate-700">{transaction.duration}h</span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className="text-sm font-semibold text-emerald-600">{transaction.amount} MKD</span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                            {new Date(transaction.created_at).toLocaleString()}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {transactions.length === 0 && (
+                            <div className="text-center py-10 text-slate-500">
+                                No transactions yet
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 

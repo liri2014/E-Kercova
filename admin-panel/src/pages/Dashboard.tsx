@@ -26,12 +26,12 @@ export const Dashboard: React.FC = () => {
 
     useEffect(() => {
         const fetchStats = async () => {
-            // Mock data for now, replace with real counts later
+            // Real data counts
             const { count: totalReports } = await supabase.from('reports').select('*', { count: 'exact', head: true });
             const { count: pendingReports } = await supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending');
             const { count: activeUsers } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
 
-            // Mock revenue calculation (sum of transactions)
+            // Real revenue calculation
             const { data: transactions } = await supabase.from('transactions').select('amount');
             const revenue = transactions?.reduce((sum, t) => sum + t.amount, 0) || 0;
 
@@ -42,16 +42,47 @@ export const Dashboard: React.FC = () => {
                 activeUsers: activeUsers || 0
             });
 
-            // Mock chart data
-            setChartData([
-                { name: 'Mon', reports: 4 },
-                { name: 'Tue', reports: 3 },
-                { name: 'Wed', reports: 7 },
-                { name: 'Thu', reports: 2 },
-                { name: 'Fri', reports: 6 },
-                { name: 'Sat', reports: 8 },
-                { name: 'Sun', reports: 5 },
-            ]);
+            // Calculate real chart data from reports in the last 7 days
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+            const { data: recentReports } = await supabase
+                .from('reports')
+                .select('created_at')
+                .gte('created_at', sevenDaysAgo.toISOString());
+
+            // Group reports by day
+            const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const reportsByDay: { [key: string]: number } = {};
+
+            // Initialize all 7 days with 0
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() - (6 - i));
+                const dayName = dayNames[date.getDay()];
+                reportsByDay[dayName] = 0;
+            }
+
+            // Count reports for each day
+            recentReports?.forEach(report => {
+                const date = new Date(report.created_at);
+                const dayName = dayNames[date.getDay()];
+                reportsByDay[dayName] = (reportsByDay[dayName] || 0) + 1;
+            });
+
+            // Convert to chart format maintaining order
+            const chartDataArray = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() - (6 - i));
+                const dayName = dayNames[date.getDay()];
+                chartDataArray.push({
+                    name: dayName,
+                    reports: reportsByDay[dayName] || 0
+                });
+            }
+
+            setChartData(chartDataArray);
         };
 
         fetchStats();

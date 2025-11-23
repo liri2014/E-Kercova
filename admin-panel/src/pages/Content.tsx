@@ -45,7 +45,9 @@ export const Content: React.FC = () => {
         description: '',
         sourceLang: 'sq',
         type: 'news',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        start_date: new Date().toISOString().split('T')[0],
+        end_date: ''
     });
     const [translating, setTranslating] = useState(false);
     const [importing, setImporting] = useState(false);
@@ -100,7 +102,9 @@ export const Content: React.FC = () => {
                     description: '',
                     sourceLang: 'sq',
                     type: 'news',
-                    date: new Date().toISOString().split('T')[0]
+                    date: new Date().toISOString().split('T')[0],
+                    start_date: new Date().toISOString().split('T')[0],
+                    end_date: ''
                 });
                 fetchItems();
             }
@@ -109,6 +113,60 @@ export const Content: React.FC = () => {
         } finally {
             setTranslating(false);
         }
+    };
+
+    const handleEdit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setTranslating(true);
+
+        try {
+            const table = activeTab === 'news' ? 'news' : 'events';
+            const updateData: any = activeTab === 'news'
+                ? {
+                    title: formData.title,
+                    description: formData.description,
+                    type: formData.type,
+                    start_date: formData.start_date,
+                    end_date: formData.end_date || null
+                }
+                : {
+                    title: formData.title,
+                    description: formData.description,
+                    date: formData.date,
+                    type: formData.type
+                };
+
+            const { error } = await supabase
+                .from(table)
+                .update(updateData)
+                .eq('id', selectedItem.id);
+
+            if (!error) {
+                setShowEditModal(false);
+                setSelectedItem(null);
+                fetchItems();
+            } else {
+                console.error('Error updating item:', error);
+            }
+        } catch (error) {
+            console.error('Error updating item:', error);
+        } finally {
+            setTranslating(false);
+        }
+    };
+
+    const openEditModal = (item: any) => {
+        setSelectedItem(item);
+        setFormData({
+            title: item.title || '',
+            description: item.description || '',
+            sourceLang: 'sq',
+            type: item.type || 'news',
+            date: item.date ? new Date(item.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            start_date: item.start_date ? new Date(item.start_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+            end_date: item.end_date ? new Date(item.end_date).toISOString().split('T')[0] : ''
+        });
+        setShowEditModal(true);
     };
 
     const handleDelete = async (id: string) => {
@@ -194,7 +252,13 @@ export const Content: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {items.map((item) => (
                         <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative group">
-                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                <button
+                                    onClick={() => openEditModal(item)}
+                                    className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+                                >
+                                    <Edit2 size={16} />
+                                </button>
                                 <button
                                     onClick={() => handleDelete(item.id)}
                                     className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"
@@ -283,7 +347,7 @@ export const Content: React.FC = () => {
                             placeholder="Enter description..."
                         />
                     </div>
-                    {activeTab === 'events' && (
+                    {activeTab === 'events' ? (
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
                             <input
@@ -294,6 +358,28 @@ export const Content: React.FC = () => {
                                 className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
                             />
                         </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={formData.start_date}
+                                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">End Date (Optional)</label>
+                                <input
+                                    type="date"
+                                    value={formData.end_date}
+                                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                />
+                            </div>
+                        </>
                     )}
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
@@ -326,6 +412,97 @@ export const Content: React.FC = () => {
                     </button>
                 </form>
             </Modal>
-        </div>
+
+            {/* Edit Modal */}
+            <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedItem(null); }} title={`Edit ${activeTab === 'news' ? 'News' : 'Event'}`}>
+                <form onSubmit={handleEdit} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
+                        <input
+                            type="text"
+                            required
+                            value={formData.title}
+                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            placeholder="Enter title..."
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                        <textarea
+                            required
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            rows={4}
+                            placeholder="Enter description..."
+                        />
+                    </div>
+                    {activeTab === 'events' ? (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                            <input
+                                type="date"
+                                required
+                                value={formData.date}
+                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={formData.start_date}
+                                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">End Date (Optional)</label>
+                                <input
+                                    type="date"
+                                    value={formData.end_date}
+                                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                />
+                            </div>
+                        </>
+                    )}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                        <select
+                            value={formData.type}
+                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                        >
+                            {activeTab === 'news' ? (
+                                <>
+                                    <option value="news">News</option>
+                                    <option value="alert">Alert</option>
+                                    <option value="maintenance">Maintenance</option>
+                                </>
+                            ) : (
+                                <>
+                                    <option value="municipal">Municipal</option>
+                                    <option value="cultural">Cultural</option>
+                                    <option value="sports">Sports</option>
+                                </>
+                            )}
+                        </select>
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={translating}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+                    >
+                        {translating ? 'Updating...' : 'Update'}
+                    </button>
+                </form>
+            </Modal>
+        </div >
     );
 };
