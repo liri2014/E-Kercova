@@ -95,7 +95,7 @@ export const Content: React.FC = () => {
 
     const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-        if (files.length + selectedPhotos.length > 3) {
+        if (files.length + photoPreviewUrls.length > 3) {
             alert('Maximum 3 photos allowed');
             return;
         }
@@ -113,7 +113,19 @@ export const Content: React.FC = () => {
     };
 
     const removePhoto = (index: number) => {
-        setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
+        const urlToRemove = photoPreviewUrls[index];
+
+        if (urlToRemove.startsWith('data:')) {
+            // It's a new photo. Find its index in selectedPhotos.
+            let newPhotoIndex = 0;
+            for (let i = 0; i < index; i++) {
+                if (photoPreviewUrls[i].startsWith('data:')) {
+                    newPhotoIndex++;
+                }
+            }
+            setSelectedPhotos(prev => prev.filter((_, i) => i !== newPhotoIndex));
+        }
+
         setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
     };
 
@@ -214,9 +226,14 @@ export const Content: React.FC = () => {
                 setSelectedPhotos([]);
                 setPhotoPreviewUrls([]);
                 fetchItems();
+            } else {
+                const errorData = await response.json();
+                alert(`Failed to create: ${errorData.error || 'Unknown error'}`);
+                console.error('Failed response:', errorData);
             }
         } catch (error) {
             console.error('Error adding item:', error);
+            alert(`Error: ${error}`);
         } finally {
             setTranslating(false);
             setUploading(false);
@@ -228,21 +245,47 @@ export const Content: React.FC = () => {
         setTranslating(true);
 
         try {
-            const table = activeTab === 'news' ? 'news' : 'events';
-            const updateData: any = activeTab === 'news'
-                ? {
+            // 1. Upload new photos
+            let newUploadedUrls: string[] = [];
+            if (selectedPhotos.length > 0) {
+                newUploadedUrls = await uploadPhotos();
+            }
+
+            // 2. Construct final list of URLs
+            // Take current previews, keep only http ones (existing), and append new uploaded ones
+            const currentExistingUrls = photoPreviewUrls.filter(url => !url.startsWith('data:'));
+            const finalPhotoUrls = [...currentExistingUrls, ...newUploadedUrls];
+
+            const table = activeTab === 'news' ? 'news' : activeTab === 'events' ? 'events' : 'landmarks';
+
+            let updateData: any;
+            if (activeTab === 'news') {
+                updateData = {
                     title: formData.title,
                     description: formData.description,
                     type: formData.type,
                     start_date: formData.start_date,
-                    end_date: formData.end_date || null
-                }
-                : {
+                    end_date: formData.end_date || null,
+                    photo_urls: finalPhotoUrls
+                };
+            } else if (activeTab === 'events') {
+                updateData = {
                     title: formData.title,
                     description: formData.description,
                     date: formData.date,
                     type: formData.type
                 };
+            } else {
+                // landmarks
+                updateData = {
+                    title: formData.title,
+                    description: formData.description,
+                    latitude: parseFloat(formData.latitude),
+                    longitude: parseFloat(formData.longitude),
+                    category: formData.category,
+                    photo_url: finalPhotoUrls[0] || null
+                };
+            }
 
             const { error } = await supabase
                 .from(table)
@@ -252,12 +295,16 @@ export const Content: React.FC = () => {
             if (!error) {
                 setShowEditModal(false);
                 setSelectedItem(null);
+                setSelectedPhotos([]);
+                setPhotoPreviewUrls([]);
                 fetchItems();
             } else {
                 console.error('Error updating item:', error);
+                alert(`Error updating: ${error.message}`);
             }
         } catch (error) {
             console.error('Error updating item:', error);
+            alert(`Error: ${error}`);
         } finally {
             setTranslating(false);
         }
@@ -277,6 +324,16 @@ export const Content: React.FC = () => {
             longitude: item.longitude?.toString() || '',
             category: item.category || 'historical'
         });
+
+        // Populate photos
+        if (item.photo_urls && item.photo_urls.length > 0) {
+            setPhotoPreviewUrls(item.photo_urls);
+        } else if (item.photo_url) {
+            setPhotoPreviewUrls([item.photo_url]);
+        } else {
+            setPhotoPreviewUrls([]);
+        }
+
         setShowEditModal(true);
     };
 
@@ -646,73 +703,6 @@ export const Content: React.FC = () => {
                             required
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                            rows={4}
-                            placeholder="Enter description..."
-                        />
-                    </div>
-                    {activeTab === 'events' ? (
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                            <input
-                                type="date"
-                                required
-                                value={formData.date}
-                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                            />
-                        </div>
-                    ) : (
-                        <>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
-                                <input
-                                    type="date"
-                                    required
-                                    value={formData.start_date}
-                                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">End Date (Optional)</label>
-                                <input
-                                    type="date"
-                                    value={formData.end_date}
-                                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                                />
-                            </div>
-                        </>
-                    )}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
-                        <select
-                            value={formData.type}
-                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                        >
-                            {activeTab === 'news' ? (
-                                <>
-                                    <option value="news">News</option>
-                                    <option value="alert">Alert</option>
-                                    <option value="maintenance">Maintenance</option>
-                                </>
-                            ) : (
-                                <>
-                                    <option value="municipal">Municipal</option>
-                                    <option value="cultural">Cultural</option>
-                                    <option value="sports">Sports</option>
-                                </>
-                            )}
-                        </select>
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={translating}
-                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
-                    >
-                        {translating ? 'Updating...' : 'Update'}
                     </button>
                 </form>
             </Modal>
