@@ -16,6 +16,7 @@ interface NewsItem {
     type: string;
     start_date: string;
     end_date?: string;
+    photo_urls?: string[];
 }
 
 interface EventItem {
@@ -49,6 +50,9 @@ export const Content: React.FC = () => {
         start_date: new Date().toISOString().split('T')[0],
         end_date: ''
     });
+    const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
+    const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
+    const [uploading, setUploading] = useState(false);
     const [translating, setTranslating] = useState(false);
     const [importing, setImporting] = useState(false);
 
@@ -68,18 +72,75 @@ export const Content: React.FC = () => {
         fetchItems();
     }, [activeTab]);
 
+    const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length + selectedPhotos.length > 3) {
+            alert('Maximum 3 photos allowed');
+            return;
+        }
+
+        setSelectedPhotos([...selectedPhotos, ...files]);
+
+        // Generate preview URLs
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPhotoPreviewUrls(prev => [...prev, reader.result as string]);
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const removePhoto = (index: number) => {
+        setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
+        setPhotoPreviewUrls(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const uploadPhotos = async (): Promise<string[]> => {
+        const photoUrls: string[] = [];
+
+        for (const photo of selectedPhotos) {
+            const fileName = `news/${Date.now()}_${Math.random().toString(36).substring(7)}_${photo.name}`;
+            const { data, error } = await supabase.storage
+                .from('app-uploads')
+                .upload(fileName, photo);
+
+            if (error) {
+                console.error('Photo upload error:', error);
+                continue;
+            }
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('app-uploads')
+                .getPublicUrl(fileName);
+
+            photoUrls.push(publicUrl);
+        }
+
+        return photoUrls;
+    };
+
+
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         setTranslating(true);
+        setUploading(true);
 
         try {
+            // Upload photos first if this is news with photos
+            let photoUrls: string[] = [];
+            if (activeTab === 'news' && selectedPhotos.length > 0) {
+                photoUrls = await uploadPhotos();
+            }
+
             const endpoint = activeTab === 'news' ? '/api/news' : '/api/events';
             const payload = activeTab === 'news'
                 ? {
                     title: formData.title,
                     description: formData.description,
                     type: formData.type,
-                    sourceLang: formData.sourceLang
+                    sourceLang: formData.sourceLang,
+                    photo_urls: photoUrls
                 }
                 : {
                     title: formData.title,
@@ -106,12 +167,15 @@ export const Content: React.FC = () => {
                     start_date: new Date().toISOString().split('T')[0],
                     end_date: ''
                 });
+                setSelectedPhotos([]);
+                setPhotoPreviewUrls([]);
                 fetchItems();
             }
         } catch (error) {
             console.error('Error adding item:', error);
         } finally {
             setTranslating(false);
+            setUploading(false);
         }
     };
 
@@ -347,6 +411,38 @@ export const Content: React.FC = () => {
                             placeholder="Enter description..."
                         />
                     </div>
+                    {activeTab === 'news' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Photos (Max 3)</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={handlePhotoSelect}
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            />
+                            {photoPreviewUrls.length > 0 && (
+                                <div className="mt-3 grid grid-cols-3 gap-2">
+                                    {photoPreviewUrls.map((url, index) => (
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={url}
+                                                alt={`Preview ${index + 1}`}
+                                                className="w-full h-24 object-cover rounded-lg border border-slate-200"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removePhoto(index)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                     {activeTab === 'events' ? (
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>

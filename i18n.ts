@@ -24,6 +24,7 @@ const translations = {
     error_code_invalid: 'Verification code must be 6 digits.',
     error_code_mismatch: 'The verification code is incorrect. Please try again.',
     demo_code_notice: 'For demonstration, your code is',
+    code_sent: 'Verification code sent! Check your phone.',
 
     // Header
     app_title: 'E-Kicevo',
@@ -136,6 +137,7 @@ const translations = {
     photo_evidence: 'Photo Evidence',
     add_photo_prompt: 'Add a photo of the issue using your camera or gallery.',
     take_photo: 'Take Photo',
+    tap_to_take_photo: 'Tap to take photo',
     choose_from_gallery: 'Choose from Gallery',
     change_photo: 'Change Photo',
     use_camera_gallery: 'Use your camera or gallery',
@@ -147,6 +149,7 @@ const translations = {
     title: 'Title',
     category: 'Category',
     analyzing: 'Analyzing...',
+    submitting: 'Submitting...',
     submit_report: 'Submit Report',
     report_submitted: 'Report Submitted!',
     report_submitted_desc: 'Thank you for your contribution to our community.',
@@ -165,6 +168,11 @@ const translations = {
     no_reports_map: 'No reports have been submitted yet. When they are, they will appear here.',
     map_of_reports: 'Map of Reports',
     preview: 'Preview',
+    add_photo: 'Add Photo',
+    loading: 'Loading...',
+    rate: 'Rate',
+    duration_hours: 'Duration (Hours)',
+    pay_now: 'Pay Now',
 
     // Categories
     Pothole: 'Pothole',
@@ -205,6 +213,7 @@ const translations = {
     error_code_invalid: 'Кодот за верификација мора да има 6 цифри.',
     error_code_mismatch: 'Кодот за верификација е неточен. Ве молиме обидете се повторно.',
     demo_code_notice: 'За демонстрација, вашиот код е',
+    code_sent: 'Кодот за верификација е испратен! Проверете го вашиот телефон.',
 
     // Header
     app_title: 'Е-Кичево',
@@ -314,6 +323,7 @@ const translations = {
     photo_evidence: 'Фото-доказ',
     add_photo_prompt: 'Додадете фотографија од проблемот користејќи ја вашата камера или галерија.',
     take_photo: 'Сликни фотографија',
+    tap_to_take_photo: 'Допрете за да сликате',
     choose_from_gallery: 'Избери од галерија',
     change_photo: 'Промени фотографија',
     use_camera_gallery: 'Користете ја камерата или галеријата',
@@ -325,6 +335,7 @@ const translations = {
     title: 'Наслов',
     category: 'Категорија',
     analyzing: 'Се анализира...',
+    submitting: 'Се поднесува...',
     submit_report: 'Поднеси пријава',
     report_submitted: 'Пријавата е поднесена!',
     report_submitted_desc: 'Ви благодариме за вашиот придонес во нашата заедница.',
@@ -343,6 +354,11 @@ const translations = {
     no_reports_map: 'Сеуште нема поднесено пријави. Кога ќе има, ќе се појават тука.',
     map_of_reports: 'Карта на пријави',
     preview: 'Преглед',
+    add_photo: 'Додади фотографија',
+    loading: 'Се вчитува...',
+    rate: 'Тарифа',
+    duration_hours: 'Времетраење (Часови)',
+    pay_now: 'Плати сега',
 
     // Categories
     Pothole: 'Дупка',
@@ -383,6 +399,7 @@ const translations = {
     error_code_invalid: 'Kodi i verifikimit duhet të jetë 6 shifra.',
     error_code_mismatch: 'Kodi i verifikimit është i pasaktë. Ju lutemi provoni përsëri.',
     demo_code_notice: 'Për demonstrim, kodi juaj është',
+    code_sent: 'Kodi i verifikimit u dërgua! Kontrolloni telefonin tuaj.',
 
     // Header
     app_title: 'E-Kërçova',
@@ -492,6 +509,7 @@ const translations = {
     photo_evidence: 'Dëshmi me Foto',
     add_photo_prompt: 'Shtoni një foto të problemit duke përdorur kamerën ose galerinë tuaj.',
     take_photo: 'Bëj Foto',
+    tap_to_take_photo: 'Prekni për të fotografuar',
     choose_from_gallery: 'Zgjidh nga Galeria',
     change_photo: 'Ndrysho Foton',
     use_camera_gallery: 'Përdor kamerën ose galerinë tënde',
@@ -503,6 +521,7 @@ const translations = {
     title: 'Titulli',
     category: 'Kategoria',
     analyzing: 'Duke analizuar...',
+    submitting: 'Duke dërguar...',
     submit_report: 'Dërgo Raportin',
     report_submitted: 'Raporti u Dërgua!',
     report_submitted_desc: 'Faleminderit për kontributin tuaj në komunitetin tonë.',
@@ -521,6 +540,11 @@ const translations = {
     no_reports_map: 'Nuk ka ende raporte të dërguara. Kur të ketë, ato do të shfaqen këtu.',
     map_of_reports: 'Harta e Raporteve',
     preview: 'Pamje paraprake',
+    add_photo: 'Shto Foto',
+    loading: 'Duke u ngarkuar...',
+    rate: 'Tarifa',
+    duration_hours: 'Kohëzgjatja (Orë)',
+    pay_now: 'Paguaj Tani',
 
     // Categories
     Pothole: 'Gropë',

@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
 // POST /api/news - Create news with auto-translation
 router.post('/', async (req, res) => {
     try {
-        const { title, description, type, sourceLang, start_date, end_date } = req.body;
+        const { title, description, type, sourceLang, start_date, end_date, photo_urls } = req.body;
 
         if (!title || !description || !sourceLang) {
             return res.status(400).json({ error: 'Missing required fields: title, description, sourceLang' });
@@ -44,7 +44,8 @@ router.post('/', async (req, res) => {
             description_en: descTranslations.en,
             type: type || 'news',
             start_date: start_date || new Date().toISOString(),
-            end_date: end_date
+            end_date: end_date,
+            photo_urls: photo_urls || []
         };
 
         const { data, error } = await supabase
