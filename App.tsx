@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ReportCategory, GeolocationState, Transaction, ParkingZone, NewsItem, NewsStatus, NewsType, Report } from './types';
+import { ReportCategory, GeolocationState, Transaction, ParkingZone, NewsItem, NewsStatus, NewsType, Report, Landmark } from './types';
 import { api } from './services/api';
 import { useTranslation } from './i18n';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { App as CapacitorApp } from '@capacitor/app';
 import { supabase } from './supabase';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
 
 // Destructure for easier usage in component, or just use api.method
-const { getParkingZones, payParking: payForParking, getEvents, getNews } = api;
+const { getParkingZones, payParking: payForParking, getEvents, getNews, getLandmarks } = api;
 
 // --- Icon System ---
 const Icon: React.FC<{ path: string; className?: string; size?: number;[key: string]: any; }> = ({ path, className = '', size = 24, ...props }) => (
@@ -215,7 +217,7 @@ export const App: React.FC = () => {
             case 'events': return <EventsView />;
             case 'news': return <NewsView />;
             case 'wallet': return <WalletView balance={walletBalance} setBalance={setWalletBalance} />;
-            case 'map': return <PlaceholderView title={t('map_view')} icon={Icons.map} />;
+            case 'map': return <MapView />;
             case 'history': return <HistoryView />;
             case 'menu': return <MenuHub onViewChange={setActiveView} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
             default: return <HomeView onViewChange={setActiveView} walletBalance={walletBalance} />;
@@ -360,6 +362,142 @@ const NavButton: React.FC<{ icon: string; label: string; active: boolean; onClic
 );
 
 // --- Sub-Views ---
+
+const MapView: React.FC = () => {
+    const { t, language } = useTranslation();
+    const [landmarks, setLandmarks] = useState<Landmark[]>([]);
+    const [selectedLandmark, setSelectedLandmark] = useState<Landmark | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        getLandmarks().then(data => {
+            setLandmarks(data);
+            setLoading(false);
+        }).catch(err => {
+            console.error('Failed to fetch landmarks:', err);
+            setLoading(false);
+        });
+    }, []);
+
+    const openNativeMap = (lat: number, lng: number, name: string) => {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const url = isIOS
+            ? `maps://maps.apple.com/?daddr=${lat},${lng}`
+            : `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(name)})`;
+        window.location.href = url;
+    };
+
+    const getTitle = (landmark: Landmark) => {
+        const key = `title_${language}` as keyof Landmark;
+        return landmark[key] as string || landmark.title_en || landmark.title;
+    };
+
+    const getDescription = (landmark: Landmark) => {
+        const key = `description_${language}` as keyof Landmark;
+        return landmark[key] as string || landmark.description_en || landmark.description;
+    };
+
+    if (loading) {
+        return (
+            <div className="h-full flex items-center justify-center">
+                <p className="text-slate-500">{t('loading')}</p>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <div className="relative h-full pb-20">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
+                    {t('map_view')}
+                </h2>
+
+                <div className="rounded-3xl overflow-hidden shadow-lg" style={{ height: 'calc(100vh - 200px)' }}>
+                    <MapContainer
+                        center={[41.5128, 20.9574]}
+                        zoom={13}
+                        style={{ height: '100%', width: '100%' }}
+                    >
+                        <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        />
+
+                        {landmarks.map((landmark) => (
+                            <Marker
+                                key={landmark.id}
+                                position={[landmark.latitude, landmark.longitude]}
+                                eventHandlers={{
+                                    click: () => setSelectedLandmark(landmark)
+                                }}
+                            >
+                                <Popup>
+                                    <div className="text-center">
+                                        <strong>{getTitle(landmark)}</strong>
+                                        <br />
+                                        <span className="text-xs text-slate-500">{landmark.category}</span>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        ))}
+                    </MapContainer>
+                </div>
+            </div>
+
+            {selectedLandmark && (
+                <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
+                    <div className="flex items-center justify-between p-4 text-white">
+                        <span className="text-sm capitalize">{selectedLandmark.category}</span>
+                        <button
+                            onClick={() => setSelectedLandmark(null)}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                        >
+                            <Icon path={Icons.x} size={24} />
+                        </button>
+                    </div>
+
+                    {selectedLandmark.photo_url && (
+                        <div className="flex-1 flex items-center justify-center p-4">
+                            <img
+                                src={selectedLandmark.photo_url}
+                                alt={getTitle(selectedLandmark)}
+                                className="max-w-full max-h-full object-contain rounded-2xl"
+                            />
+                        </div>
+                    )}
+
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-t-3xl">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
+                                {selectedLandmark.category}
+                            </span>
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                            {getTitle(selectedLandmark)}
+                        </h2>
+                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+                            {getDescription(selectedLandmark)}
+                        </p>
+
+                        <Button
+                            variant="primary"
+                            fullWidth
+                            onClick={() => openNativeMap(
+                                selectedLandmark.latitude,
+                                selectedLandmark.longitude,
+                                getTitle(selectedLandmark)
+                            )}
+                            className="gap-2"
+                        >
+                            <Icon path={Icons.location} size={20} />
+                            {t('get_directions')}
+                        </Button>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+};
 
 const HomeView: React.FC<{ onViewChange: (view: string) => void, walletBalance: number }> = ({ onViewChange, walletBalance }) => {
     const { t } = useTranslation();
@@ -1085,8 +1223,8 @@ const NewsView: React.FC = () => {
                                             <div
                                                 key={idx}
                                                 className={`w-2 h-2 rounded-full transition-all ${idx === currentPhotoIndex
-                                                        ? 'bg-white w-6'
-                                                        : 'bg-white/50'
+                                                    ? 'bg-white w-6'
+                                                    : 'bg-white/50'
                                                     }`}
                                             />
                                         ))}

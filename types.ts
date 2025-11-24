@@ -61,3 +61,20 @@ export interface Report {
   photoPreviewUrl: string;
   timestamp: string; // ISO Date string
 }
+
+export interface Landmark {
+  id: string;
+  title: string;
+  title_mk?: string;
+  title_sq?: string;
+  title_en?: string;
+  description: string;
+  description_mk?: string;
+  description_sq?: string;
+  description_en?: string;
+  latitude: number;
+  longitude: number;
+  photo_url?: string;
+  category: string;
+  created_at?: string;
+}

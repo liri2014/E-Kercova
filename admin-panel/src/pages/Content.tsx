@@ -34,8 +34,25 @@ interface EventItem {
     is_holiday?: boolean;
 }
 
+interface LandmarkItem {
+    id: string;
+    title: string;
+    title_mk?: string;
+    title_sq?: string;
+    title_en?: string;
+    description: string;
+    description_mk?: string;
+    description_sq?: string;
+    description_en?: string;
+    latitude: number;
+    longitude: number;
+    photo_url?: string;
+    category: string;
+    created_at?: string;
+}
+
 export const Content: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'news' | 'events'>('news');
+    const [activeTab, setActiveTab] = useState<'news' | 'events' | 'landmarks'>('news');
     const [items, setItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -48,7 +65,10 @@ export const Content: React.FC = () => {
         type: 'news',
         date: new Date().toISOString().split('T')[0],
         start_date: new Date().toISOString().split('T')[0],
-        end_date: ''
+        end_date: '',
+        latitude: '',
+        longitude: '',
+        category: 'historical'
     });
     const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
     const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
@@ -58,11 +78,12 @@ export const Content: React.FC = () => {
 
     const fetchItems = async () => {
         setLoading(true);
-        const table = activeTab === 'news' ? 'news' : 'events';
+        const table = activeTab === 'news' ? 'news' : activeTab === 'events' ? 'events' : 'landmarks';
+        const orderBy = activeTab === 'news' ? 'start_date' : activeTab === 'events' ? 'date' : 'created_at';
         const { data, error } = await supabase
             .from(table)
             .select('*')
-            .order(activeTab === 'news' ? 'start_date' : 'date', { ascending: false });
+            .order(orderBy, { ascending: false });
         if (error) console.error(error);
         else setItems(data || []);
         setLoading(false);
@@ -127,28 +148,48 @@ export const Content: React.FC = () => {
         setUploading(true);
 
         try {
-            // Upload photos first if this is news with photos
+            // Upload photos first if this is news with photos or landmarks with photo
             let photoUrls: string[] = [];
+            let landmarkPhotoUrl = '';
+
             if (activeTab === 'news' && selectedPhotos.length > 0) {
                 photoUrls = await uploadPhotos();
+            } else if (activeTab === 'landmarks' && selectedPhotos.length > 0) {
+                const urls = await uploadPhotos();
+                landmarkPhotoUrl = urls[0] || ''; // Landmarks only need one photo
             }
 
-            const endpoint = activeTab === 'news' ? '/api/news' : '/api/events';
-            const payload = activeTab === 'news'
-                ? {
+            const endpoint = activeTab === 'news' ? '/api/news' : activeTab === 'events' ? '/api/events' : '/api/landmarks';
+
+            let payload: any;
+            if (activeTab === 'news') {
+                payload = {
                     title: formData.title,
                     description: formData.description,
                     type: formData.type,
                     sourceLang: formData.sourceLang,
                     photo_urls: photoUrls
-                }
-                : {
+                };
+            } else if (activeTab === 'events') {
+                payload = {
                     title: formData.title,
                     description: formData.description,
                     date: formData.date,
                     type: formData.type,
                     sourceLang: formData.sourceLang
                 };
+            } else {
+                // landmarks
+                payload = {
+                    title: formData.title,
+                    description: formData.description,
+                    latitude: parseFloat(formData.latitude),
+                    longitude: parseFloat(formData.longitude),
+                    category: formData.category,
+                    sourceLang: formData.sourceLang,
+                    photo_url: landmarkPhotoUrl
+                };
+            }
 
             const response = await fetch(`http://localhost:3000${endpoint}`, {
                 method: 'POST',
@@ -165,7 +206,10 @@ export const Content: React.FC = () => {
                     type: 'news',
                     date: new Date().toISOString().split('T')[0],
                     start_date: new Date().toISOString().split('T')[0],
-                    end_date: ''
+                    end_date: '',
+                    latitude: '',
+                    longitude: '',
+                    category: 'historical'
                 });
                 setSelectedPhotos([]);
                 setPhotoPreviewUrls([]);
@@ -228,7 +272,10 @@ export const Content: React.FC = () => {
             type: item.type || 'news',
             date: item.date ? new Date(item.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             start_date: item.start_date ? new Date(item.start_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-            end_date: item.end_date ? new Date(item.end_date).toISOString().split('T')[0] : ''
+            end_date: item.end_date ? new Date(item.end_date).toISOString().split('T')[0] : '',
+            latitude: item.latitude?.toString() || '',
+            longitude: item.longitude?.toString() || '',
+            category: item.category || 'historical'
         });
         setShowEditModal(true);
     };
@@ -290,7 +337,7 @@ export const Content: React.FC = () => {
                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/20"
                     >
                         <Plus size={20} />
-                        Add {activeTab === 'news' ? 'News' : 'Event'}
+                        Add {activeTab === 'news' ? 'News' : activeTab === 'events' ? 'Event' : 'Landmark'}
                     </button>
                 </div>
             </div>
@@ -307,6 +354,12 @@ export const Content: React.FC = () => {
                     className={`pb-4 px-2 font-medium transition-all ${activeTab === 'events' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     City Events
+                </button>
+                <button
+                    onClick={() => setActiveTab('landmarks')}
+                    className={`pb-4 px-2 font-medium transition-all ${activeTab === 'landmarks' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                    Landmarks
                 </button>
             </div>
 
@@ -331,7 +384,7 @@ export const Content: React.FC = () => {
                                 </button>
                             </div>
                             <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
-                                {activeTab === 'news' ? <Newspaper size={24} /> : <Calendar size={24} />}
+                                {activeTab === 'news' ? <Newspaper size={24} /> : activeTab === 'events' ? <Calendar size={24} /> : <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>}
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
 
@@ -443,7 +496,69 @@ export const Content: React.FC = () => {
                             )}
                         </div>
                     )}
-                    {activeTab === 'events' ? (
+                    {activeTab === 'landmarks' ? (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Photo</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handlePhotoSelect}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                />
+                                {photoPreviewUrls.length > 0 && (
+                                    <div className="mt-3">
+                                        <img
+                                            src={photoPreviewUrls[0]}
+                                            alt="Preview"
+                                            className="w-full h-48 object-cover rounded-lg border border-slate-200"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Latitude</label>
+                                    <input
+                                        type="number"
+                                        step="0.000001"
+                                        required
+                                        value={formData.latitude}
+                                        onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                        placeholder="41.5128"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Longitude</label>
+                                    <input
+                                        type="number"
+                                        step="0.000001"
+                                        required
+                                        value={formData.longitude}
+                                        onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                        placeholder="20.9574"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                                <select
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                >
+                                    <option value="historical">Historical</option>
+                                    <option value="religious">Religious</option>
+                                    <option value="museum">Museum</option>
+                                    <option value="monument">Monument</option>
+                                    <option value="nature">Nature</option>
+                                    <option value="restaurant">Restaurant</option>
+                                </select>
+                            </div>
+                        </>
+                    ) : activeTab === 'events' ? (
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
                             <input
@@ -477,28 +592,30 @@ export const Content: React.FC = () => {
                             </div>
                         </>
                     )}
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
-                        <select
-                            value={formData.type}
-                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-                        >
-                            {activeTab === 'news' ? (
-                                <>
-                                    <option value="news">News</option>
-                                    <option value="alert">Alert</option>
-                                    <option value="maintenance">Maintenance</option>
-                                </>
-                            ) : (
-                                <>
-                                    <option value="municipal">Municipal</option>
-                                    <option value="cultural">Cultural</option>
-                                    <option value="sports">Sports</option>
-                                </>
-                            )}
-                        </select>
-                    </div>
+                    {activeTab !== 'landmarks' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                            <select
+                                value={formData.type}
+                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            >
+                                {activeTab === 'news' ? (
+                                    <>
+                                        <option value="news">News</option>
+                                        <option value="alert">Alert</option>
+                                        <option value="maintenance">Maintenance</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="municipal">Municipal</option>
+                                        <option value="cultural">Cultural</option>
+                                        <option value="sports">Sports</option>
+                                    </>
+                                )}
+                            </select>
+                        </div>
+                    )}
                     <button
                         type="submit"
                         disabled={translating}

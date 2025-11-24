@@ -117,6 +117,17 @@ export const api = {
         return data;
     },
 
+    // --- LANDMARKS (Read via Supabase) ---
+    getLandmarks: async () => {
+        const { data, error } = await supabase
+            .from('landmarks')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data;
+    },
+
     // --- AUTH (Delete Account via Backend) ---
     deleteAccount: async (userId: string) => {
         const response = await fetch(`${API_URL}/api/auth/account`, {
