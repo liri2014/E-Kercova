@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Car, Edit2, Trash2, Plus } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import { api } from '../lib/api';
 
 interface ParkingZone {
     id: string;
@@ -38,23 +39,18 @@ export const Parking: React.FC = () => {
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch('http://localhost:3000/api/parking/zones', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: formData.name,
-                    rate: Number(formData.rate),
-                    capacity: Number(formData.capacity)
-                })
+            await api.parking.createZone({
+                name: formData.name,
+                rate: Number(formData.rate),
+                capacity: Number(formData.capacity)
             });
 
-            if (response.ok) {
-                setShowAddModal(false);
-                setFormData({ name: '', rate: '', capacity: '' });
-                fetchZones();
-            }
+            setShowAddModal(false);
+            setFormData({ name: '', rate: '', capacity: '' });
+            fetchZones();
         } catch (error) {
             console.error('Error adding zone:', error);
+            alert(`Failed to add zone: ${error}`);
         }
     };
 
@@ -63,24 +59,19 @@ export const Parking: React.FC = () => {
         if (!selectedZone) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/api/parking/zones/${selectedZone.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: formData.name,
-                    rate: Number(formData.rate),
-                    capacity: Number(formData.capacity)
-                })
+            await api.parking.updateZone(selectedZone.id, {
+                name: formData.name,
+                rate: Number(formData.rate),
+                capacity: Number(formData.capacity)
             });
 
-            if (response.ok) {
-                setShowEditModal(false);
-                setSelectedZone(null);
-                setFormData({ name: '', rate: '', capacity: '' });
-                fetchZones();
-            }
+            setShowEditModal(false);
+            setSelectedZone(null);
+            setFormData({ name: '', rate: '', capacity: '' });
+            fetchZones();
         } catch (error) {
             console.error('Error updating zone:', error);
+            alert(`Failed to update zone: ${error}`);
         }
     };
 
@@ -88,17 +79,14 @@ export const Parking: React.FC = () => {
         if (!selectedZone) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/api/parking/zones/${selectedZone.id}`, {
-                method: 'DELETE'
-            });
+            await api.parking.deleteZone(selectedZone.id);
 
-            if (response.ok) {
-                setShowDeleteModal(false);
-                setSelectedZone(null);
-                fetchZones();
-            }
+            setShowDeleteModal(false);
+            setSelectedZone(null);
+            fetchZones();
         } catch (error) {
             console.error('Error deleting zone:', error);
+            alert(`Failed to delete zone: ${error}`);
         }
     };
 

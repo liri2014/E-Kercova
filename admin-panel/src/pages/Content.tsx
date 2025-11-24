@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Plus, Calendar, Newspaper, Trash2, Edit2, Download } from 'lucide-react';
 import { Modal } from '../components/Modal';
+import { api } from '../lib/api';
 
 interface NewsItem {
     id: string;
@@ -203,34 +204,27 @@ export const Content: React.FC = () => {
                 };
             }
 
-            const response = await fetch(`http://localhost:3000${endpoint}`, {
+            const response = await api.request(endpoint, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            if (response.ok) {
-                setShowAddModal(false);
-                setFormData({
-                    title: '',
-                    description: '',
-                    sourceLang: 'sq',
-                    type: 'news',
-                    date: new Date().toISOString().split('T')[0],
-                    start_date: new Date().toISOString().split('T')[0],
-                    end_date: '',
-                    latitude: '',
-                    longitude: '',
-                    category: 'historical'
-                });
-                setSelectedPhotos([]);
-                setPhotoPreviewUrls([]);
-                fetchItems();
-            } else {
-                const errorData = await response.json();
-                alert(`Failed to create: ${errorData.error || 'Unknown error'}`);
-                console.error('Failed response:', errorData);
-            }
+            setShowAddModal(false);
+            setFormData({
+                title: '',
+                description: '',
+                sourceLang: 'sq',
+                type: 'news',
+                date: new Date().toISOString().split('T')[0],
+                start_date: new Date().toISOString().split('T')[0],
+                end_date: '',
+                latitude: '',
+                longitude: '',
+                category: 'historical'
+            });
+            setSelectedPhotos([]);
+            setPhotoPreviewUrls([]);
+            fetchItems();
         } catch (error) {
             console.error('Error adding item:', error);
             alert(`Error: ${error}`);
@@ -325,7 +319,10 @@ export const Content: React.FC = () => {
             category: item.category || 'historical'
         });
 
-        // Populate photos
+        // Reset selectedPhotos to empty (new photos will be added separately)
+        setSelectedPhotos([]);
+
+        // Populate existing photo URLs for display
         if (item.photo_urls && item.photo_urls.length > 0) {
             setPhotoPreviewUrls(item.photo_urls);
         } else if (item.photo_url) {
@@ -339,16 +336,14 @@ export const Content: React.FC = () => {
 
     const handleDelete = async (id: string) => {
         try {
-            const endpoint = activeTab === 'news' ? '/api/news' : '/api/events';
-            const response = await fetch(`http://localhost:3000${endpoint}/${id}`, {
+            const endpoint = activeTab === 'news' ? '/api/news' : activeTab === 'events' ? '/api/events' : '/api/landmarks';
+            await api.request(`${endpoint}/${id}`, {
                 method: 'DELETE'
             });
-
-            if (response.ok) {
-                fetchItems();
-            }
+            fetchItems();
         } catch (error) {
             console.error('Error deleting item:', error);
+            alert(`Failed to delete: ${error}`);
         }
     };
 
@@ -356,16 +351,9 @@ export const Content: React.FC = () => {
         setImporting(true);
         try {
             const year = new Date().getFullYear();
-            const response = await fetch(`http://localhost:3000/api/holidays/import`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ year })
-            });
-
-            if (response.ok) {
-                alert(`Successfully imported holidays for ${year}`);
-                fetchItems();
-            }
+            await api.holidays.import(year);
+            alert(`Successfully imported holidays for ${year}`);
+            fetchItems();
         } catch (error) {
             console.error('Error importing holidays:', error);
             alert('Failed to import holidays');
