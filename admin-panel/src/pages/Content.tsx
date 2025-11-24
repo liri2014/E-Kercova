@@ -684,7 +684,7 @@ export const Content: React.FC = () => {
             </Modal>
 
             {/* Edit Modal */}
-            <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedItem(null); }} title={`Edit ${activeTab === 'news' ? 'News' : 'Event'}`}>
+            <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedItem(null); }} title={`Edit ${activeTab === 'news' ? 'News' : activeTab === 'events' ? 'Event' : 'Landmark'}`}>
                 <form onSubmit={handleEdit} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
@@ -703,6 +703,153 @@ export const Content: React.FC = () => {
                             required
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            rows={4}
+                            placeholder="Enter description..."
+                        />
+                    </div>
+
+                    {(activeTab === 'news' || activeTab === 'landmarks') && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Photos {activeTab === 'news' ? '(Max 3)' : ''}</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                multiple={activeTab === 'news'}
+                                onChange={handlePhotoSelect}
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            />
+                            {photoPreviewUrls.length > 0 && (
+                                <div className={`mt-3 grid ${activeTab === 'news' ? 'grid-cols-3' : 'grid-cols-1'} gap-2`}>
+                                    {photoPreviewUrls.map((url, index) => (
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={url}
+                                                alt={`Preview ${index + 1}`}
+                                                className={`w-full ${activeTab === 'news' ? 'h-24' : 'h-48'} object-cover rounded-lg border border-slate-200`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => removePhoto(index)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {activeTab === 'landmarks' ? (
+                        <>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Latitude</label>
+                                    <input
+                                        type="number"
+                                        step="0.000001"
+                                        required
+                                        value={formData.latitude}
+                                        onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Longitude</label>
+                                    <input
+                                        type="number"
+                                        step="0.000001"
+                                        required
+                                        value={formData.longitude}
+                                        onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                                <select
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                >
+                                    <option value="historical">Historical</option>
+                                    <option value="religious">Religious</option>
+                                    <option value="museum">Museum</option>
+                                    <option value="monument">Monument</option>
+                                    <option value="nature">Nature</option>
+                                    <option value="restaurant">Restaurant</option>
+                                </select>
+                            </div>
+                        </>
+                    ) : activeTab === 'events' ? (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                            <input
+                                type="date"
+                                required
+                                value={formData.date}
+                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    required
+                                    value={formData.start_date}
+                                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">End Date (Optional)</label>
+                                <input
+                                    type="date"
+                                    value={formData.end_date}
+                                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                                />
+                            </div>
+                        </>
+                    )}
+
+                    {activeTab !== 'landmarks' && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
+                            <select
+                                value={formData.type}
+                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                            >
+                                {activeTab === 'news' ? (
+                                    <>
+                                        <option value="news">News</option>
+                                        <option value="alert">Alert</option>
+                                        <option value="maintenance">Maintenance</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="municipal">Municipal</option>
+                                        <option value="cultural">Cultural</option>
+                                        <option value="sports">Sports</option>
+                                    </>
+                                )}
+                            </select>
+                        </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={translating}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+                    >
+                        {translating ? 'Updating...' : 'Update'}
                     </button>
                 </form>
             </Modal>
