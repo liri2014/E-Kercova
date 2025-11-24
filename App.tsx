@@ -957,6 +957,8 @@ const NewsView: React.FC = () => {
     const { t } = useTranslation();
     const [news, setNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
     useEffect(() => {
         getNews().then(data => {
@@ -987,25 +989,126 @@ const NewsView: React.FC = () => {
     }
 
     return (
-        <div className="space-y-4 pb-20">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('news')}</h2>
-            {news.length === 0 ? (
-                <p className="text-slate-500 text-center py-10">No news available</p>
-            ) : (
-                news.map(item => (
-                    <Card key={item.id} className="p-5 flex flex-col gap-3">
-                        <div className="flex justify-between items-start">
-                            <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${item.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
-                                {item.type}
-                            </span>
-                            <span className="text-xs text-slate-400">{formatDate(item.start_date)}</span>
+        <>
+            <div className="space-y-4 pb-20">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('news')}</h2>
+                {news.length === 0 ? (
+                    <p className="text-slate-500 text-center py-10">No news available</p>
+                ) : (
+                    news.map(item => (
+                        <Card
+                            key={item.id}
+                            className="p-5 flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow"
+                            onClick={() => {
+                                setSelectedNews(item);
+                                setCurrentPhotoIndex(0);
+                            }}
+                        >
+                            {/* Photo thumbnail */}
+                            {item.photo_urls && item.photo_urls.length > 0 && (
+                                <div className="relative w-full h-48 -mx-5 -mt-5 mb-3">
+                                    <img
+                                        src={item.photo_urls[0]}
+                                        alt={item.title}
+                                        className="w-full h-full object-cover rounded-t-2xl"
+                                    />
+                                    {item.photo_urls.length > 1 && (
+                                        <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded-md text-xs">
+                                            +{item.photo_urls.length - 1} more
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="flex justify-between items-start">
+                                <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${item.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+                                    {item.type}
+                                </span>
+                                <span className="text-xs text-slate-400">{formatDate(item.start_date)}</span>
+                            </div>
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">{item.title}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{item.description}</p>
+                        </Card>
+                    ))
+                )}
+            </div>
+
+            {/* Full-screen News Viewer Modal */}
+            {selectedNews && (
+                <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 text-white">
+                        <span className="text-sm">{formatDate(selectedNews.start_date)}</span>
+                        <button
+                            onClick={() => setSelectedNews(null)}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                        >
+                            <Icon path={Icons.close} size={24} />
+                        </button>
+                    </div>
+
+                    {/* Photo Carousel */}
+                    {selectedNews.photo_urls && selectedNews.photo_urls.length > 0 && (
+                        <div className="relative flex-1 flex items-center justify-center">
+                            <img
+                                src={selectedNews.photo_urls[currentPhotoIndex]}
+                                alt={selectedNews.title}
+                                className="max-w-full max-h-full object-contain"
+                            />
+
+                            {selectedNews.photo_urls.length > 1 && (
+                                <>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCurrentPhotoIndex((prev) =>
+                                                prev > 0 ? prev - 1 : selectedNews.photo_urls!.length - 1
+                                            );
+                                        }}
+                                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm p-3 rounded-full hover:bg-white/30 transition-colors"
+                                    >
+                                        <Icon path={Icons.chevronLeft} size={24} className="text-white" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCurrentPhotoIndex((prev) =>
+                                                prev < selectedNews.photo_urls!.length - 1 ? prev + 1 : 0
+                                            );
+                                        }}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm p-3 rounded-full hover:bg-white/30 transition-colors"
+                                    >
+                                        <Icon path={Icons.chevronRight} size={24} className="text-white" />
+                                    </button>
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                        {selectedNews.photo_urls.map((_, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`w-2 h-2 rounded-full transition-all ${idx === currentPhotoIndex
+                                                        ? 'bg-white w-6'
+                                                        : 'bg-white/50'
+                                                    }`}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-white">{item.title}</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">{item.description}</p>
-                    </Card>
-                ))
+                    )}
+
+                    {/* Content */}
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-t-3xl max-h-1/3 overflow-y-auto">
+                        <div className="flex items-center gap-2 mb-3">
+                            <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${selectedNews.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+                                {selectedNews.type}
+                            </span>
+                        </div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">{selectedNews.title}</h2>
+                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{selectedNews.description}</p>
+                    </div>
+                </div>
             )}
-        </div>
+        </>
     );
 };
 
