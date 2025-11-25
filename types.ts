@@ -46,11 +46,19 @@ export enum NewsType {
 
 export interface NewsItem {
   id: string;
-  type: NewsType;
+  type: NewsType | string;
   title: string;
+  title_en?: string;
+  title_mk?: string;
+  title_sq?: string;
   description: string;
+  description_en?: string;
+  description_mk?: string;
+  description_sq?: string;
   startDate: Date;
   endDate: Date;
+  photo_urls?: string[];
+  created_at?: string;
 }
 
 export interface Report {

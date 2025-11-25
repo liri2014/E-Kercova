@@ -183,6 +183,8 @@ const translations = {
     'Park Maintenance': 'Park Maintenance',
     Other: 'Other',
 
+
+
     // Tutorial
     skip_tutorial: "Skip",
     finish_tutorial: "Finish",
@@ -368,6 +370,22 @@ const translations = {
     'Damaged Sign': 'Оштетен знак',
     'Park Maintenance': 'Одржување на парк',
     Other: 'Друго',
+
+
+    // Onboarding Tutorial
+    skip: 'Skip',
+    get_started: 'Get Started',
+    onboarding_welcome_title: 'Welcome to E-Kërçova',
+    onboarding_welcome_text: 'Your municipal services in one convenient place',
+    onboarding_report_title: 'Report Problems',
+    onboarding_report_text: 'Take a photo and report municipal issues instantly. Help make our city better!',
+    onboarding_parking_title: 'Quick Parking',
+    onboarding_parking_text: 'Pay for parking easily from your phone. No more searching for meters!',
+    onboarding_events_title: 'Stay Updated',
+    onboarding_events_text: 'Check events, news, and discover local attractions all in one place',
+    onboarding_done_title: "Подготвени сте!",
+    onboarding_done_text: 'Ready to explore all the features and make the most of our services',
+
 
     // Tutorial
     skip_tutorial: "Прескокни",
@@ -555,6 +573,22 @@ const translations = {
     'Park Maintenance': 'Mirëmbajtje parku',
     Other: 'Tjetër',
 
+
+    // Onboarding Tutorial
+    skip: 'Skip',
+    get_started: 'Get Started',
+    onboarding_welcome_title: 'Welcome to E-Kërçova',
+    onboarding_welcome_text: 'Your municipal services in one convenient place',
+    onboarding_report_title: 'Report Problems',
+    onboarding_report_text: 'Take a photo and report municipal issues instantly. Help make our city better!',
+    onboarding_parking_title: 'Quick Parking',
+    onboarding_parking_text: 'Pay for parking easily from your phone. No more searching for meters!',
+    onboarding_events_title: 'Stay Updated',
+    onboarding_events_text: 'Check events, news, and discover local attractions all in one place',
+    onboarding_done_title: "Jeni Gati!",
+    onboarding_done_text: 'Ready to explore all the features and make the most of our services',
+
+
     // Tutorial
     skip_tutorial: "Anashkalo",
     finish_tutorial: "Përfundo",
@@ -608,3 +642,4 @@ export const useTranslation = () => {
   }
   return context;
 };
+

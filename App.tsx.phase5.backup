@@ -8,12 +8,81 @@ import { supabase } from './supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { TutorialOverlay } from './components/tutorial';
-import { Icon, Icons, Card, Button, Input, Select } from './components/ui';
 import { MapView, ReportView, ParkingView, EventsView, NewsView, WalletView, PlaceholderView, HistoryView, MenuHub } from './components/views';
 
 // Destructure for easier usage in component, or just use api.method
 const { getParkingZones, payParking: payForParking, getEvents, getNews, getLandmarks } = api;
 
+// --- Icon System ---
+const Icon: React.FC<{ path: string; className?: string; size?: number;[key: string]: any; }> = ({ path, className = '', size = 24, ...props }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d={path} />
+    </svg>
+);
+
+const Icons = {
+    location: "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
+    camera: "M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
+    chevronLeft: "m15 18-6-6 6-6",
+    chevronRight: "m9 18 6-6-6-6",
+    checkCircle: "M22 11.08V12a10 10 0 1 1-5.93-9.14 M9 11l3 3L22 4",
+    alertCircle: "m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z M12 9v4 M12 17h.01",
+    sun: "M12 1v2 M12 21v2 M4.22 4.22l1.42 1.42 M18.36 18.36l1.42 1.42 M1 12h2 M21 12h2 M4.22 19.78l1.42-1.42 M18.36 5.64l1.42-1.42 M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z",
+    moon: "M12 3a6.36 6.36 0 0 0 9 9 9 9 0 1 1-9-9Z",
+    building: "M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18 M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2 M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2 M10 6h4 M10 10h4 M10 14h4 M10 18h4",
+    cog: "M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M12 2v2 M12 22v-2 m-7.07-2.93 1.41 1.41 m11.31-11.31 1.41 1.41 M2 12h2 M22 12h-2 m-2.93 7.07 1.41-1.41 M6.34 6.34l1.41-1.41",
+    phone: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z",
+    parking: "M9 12h6 M2 9a3 3 0 0 1 0 6v1a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-1a3 3 0 0 1 0-6V8a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z",
+    calendar: "M8 2v4 M16 2v4 M3 10h18 M3 6h18v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z",
+    wallet: "M21 12V7H5a2 2 0 0 1 0-4h14v4 M3 5v14a2 2 0 0 0 2 2h16v-5 M18 12a2 2 0 0 0 0 4h4v-4Z",
+    calendarDays: "M8 2v4 M16 2v4 M3 10h18 M3 6h18v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z M8 14h.01 M12 14h.01 M16 14h.01 M8 18h.01 M12 18h.01 M16 18h.01",
+    news: "M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2V8h2 M14 12h4 M14 8h4 M14 16h4 M8 12h2 M8 8h2 M8 16h2",
+    report: "M3 11v2a1 1 0 0 0 1 1h3l3 3V8l-3 3H4a1 1 0 0 0-1 1z m8 0.5a4.5 4.5 0 0 1 0-3 m3 1.5a8 8 0 0 1 0-4 m3 2a10 10 0 0 1 0-6",
+    wrench: "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6",
+    home: "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+    menu: "M4 6h16M4 12h16M4 18h16",
+    plus: "M12 5v14M5 12h14",
+    clock: "M12 6v6l4 2",
+    creditCard: "M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z",
+    map: "M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7",
+    history: "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8M3 3v5h5M12 7v5l4 2",
+    x: "M18 6L6 18M6 6l12 12"
+};
+
+// --- UI Components ---
+const Card: React.FC<{ children: React.ReactNode; className?: string; onClick?: () => void }> = ({ children, className = '', onClick }) => (
+    <div onClick={onClick} className={`bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden ${className} ${onClick ? 'cursor-pointer active:scale-[0.98] transition-transform' : ''}`}>
+        {children}
+    </div>
+);
+
+const Button: React.FC<{ children: React.ReactNode; onClick?: () => void; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; className?: string; disabled?: boolean; fullWidth?: boolean }> = ({ children, onClick, variant = 'primary', className = '', disabled = false, fullWidth = false }) => {
+    const baseStyle = "relative h-12 px-6 rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    const variants = {
+        primary: "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 active:translate-y-0.5",
+        secondary: "bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-700",
+        ghost: "bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300",
+        danger: "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400"
+    };
+    return (
+        <button onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${fullWidth ? 'w-full' : ''} ${className}`}>
+            {children}
+        </button>
+    );
+};
+
+const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = ({ className, ...props }) => (
+    <input className={`w-full h-12 px-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 ${className}`} {...props} />
+);
+
+const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = ({ className, children, ...props }) => (
+    <div className="relative">
+        <select className={`w-full h-12 px-4 pr-10 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all appearance-none text-slate-900 dark:text-white ${className}`} {...props}>
+            {children}
+        </select>
+        <Icon path={Icons.chevronRight} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none rotate-90" size={20} />
+    </div>
+);
 
 // --- App Component ---
 export const App: React.FC = () => {
@@ -250,8 +319,7 @@ export const App: React.FC = () => {
             <main
                 className="absolute left-0 right-0 overflow-y-auto no-scrollbar p-4"
                 style={{
-                    top: '0',
-                    paddingTop: 'calc(80px + env(safe-area-inset-top))', // Added padding for header
+                    top: 'calc(64px + env(safe-area-inset-top))',
                     bottom: 'calc(80px + env(safe-area-inset-bottom))'
                 }}
             >
@@ -272,12 +340,12 @@ export const App: React.FC = () => {
                 <NavButton icon={Icons.parking} label="Parking" active={activeView === 'parking'} onClick={() => setActiveView('parking')} />
 
                 {/* FAB */}
-                <div>
+                <div className="-mt-8">
                     <button
                         onClick={() => setActiveView('report')}
-                        className="w-12 h-12 bg-indigo-600 rounded-full shadow-lg shadow-indigo-600/30 flex items-center justify-center text-white active:scale-95 transition-transform"
+                        className="w-14 h-14 bg-indigo-600 rounded-full shadow-lg shadow-indigo-600/30 flex items-center justify-center text-white active:scale-95 transition-transform"
                     >
-                        <Icon path={Icons.plus} size={24} />
+                        <Icon path={Icons.plus} size={28} />
                     </button>
                 </div>
 
@@ -299,32 +367,12 @@ const NavButton: React.FC<{ icon: string; label: string; active: boolean; onClic
 
 
 const HomeView: React.FC<{ onViewChange: (view: string) => void, walletBalance: number }> = ({ onViewChange, walletBalance }) => {
-    const { t, language } = useTranslation();
+    const { t } = useTranslation();
     const hour = new Date().getHours();
     const greeting = hour < 12 ? t('good_morning') : hour < 18 ? t('good_afternoon') : t('good_evening');
-    const [latestNews, setLatestNews] = useState<NewsItem | null>(null);
-
-    useEffect(() => {
-        // Fetch latest news
-        getNews().then(data => {
-            if (data && data.length > 0) {
-                setLatestNews(data[0]); // Get the first (latest) news item
-            }
-        }).catch(err => console.error('Failed to fetch news:', err));
-    }, []);
-
-    const getNewsTitle = (news: NewsItem) => {
-        const titleKey = `title_${language}` as 'title_en' | 'title_mk' | 'title_sq';
-        return news[titleKey] || news.title_en || news.title || '';
-    };
-
-    const getNewsDescription = (news: NewsItem) => {
-        const descKey = `description_${language}` as 'description_en' | 'description_mk' | 'description_sq';
-        return news[descKey] || news.description_en || news.description || '';
-    };
 
     return (
-        <div className="space-y-6 pb-6">
+        <div className="space-y-6">
             {/* Greeting */}
             <div>
                 <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{greeting}, Citizen</h2>
@@ -353,63 +401,16 @@ const HomeView: React.FC<{ onViewChange: (view: string) => void, walletBalance: 
                     </div>
                 </div>
             </Card>
-
-            {/* News & Alerts Widget */}
-            <div>
-                <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t('news')}</h3>
-                    <button
-                        onClick={() => onViewChange('news')}
-                        className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
-                    >
-                        View All
-                    </button>
-                </div>
-
-                {latestNews ? (
-                    <Card className="p-0 overflow-hidden" onClick={() => onViewChange('news')}>
-                        <div className="flex gap-3 p-4">
-                            {/* Thumbnail */}
-                            {latestNews.photo_urls && latestNews.photo_urls.length > 0 && (
-                                <div className="flex-shrink-0">
-                                    <img
-                                        src={latestNews.photo_urls[0]}
-                                        alt={getNewsTitle(latestNews)}
-                                        className="w-20 h-20 object-cover rounded-xl"
-                                    />
-                                </div>
-                            )}
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                                <span className="inline-block px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase rounded mb-1">
-                                    {latestNews.type || 'NEWS'}
-                                </span>
-                                <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-tight mb-1 line-clamp-1">
-                                    {getNewsTitle(latestNews)}
-                                </h4>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                                    {getNewsDescription(latestNews)}
-                                </p>
-                            </div>
-                        </div>
-                    </Card>
-                ) : (
-                    <Card className="p-6 text-center">
-                        <p className="text-slate-400 text-sm">{t('no_news_available')}</p>
-                    </Card>
-                )}
-            </div>
         </div>
     );
 };
 
 const ServiceCard: React.FC<{ icon: string; title: string; color: string; onClick: () => void; id?: string }> = ({ icon, title, color, onClick, id }) => (
-    <button id={id} onClick={onClick} className="bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border-none flex flex-col items-start gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group">
-        <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20`}>
-            <Icon path={icon} size={24} />
+    <button id={id} onClick={onClick} className="bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-start gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group">
+        <div className={`w-10 h-10 ${color} rounded-2xl flex items-center justify-center text-white shadow-md`}>
+            <Icon path={icon} size={20} />
         </div>
-        <span className="font-bold text-slate-900 dark:text-white text-sm leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{title}</span>
+        <span className="font-semibold text-slate-900 dark:text-white text-sm leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{title}</span>
     </button>
 );
 

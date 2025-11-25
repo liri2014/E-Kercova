@@ -1,0 +1,165 @@
+diff --git a/App.tsx b/App.tsx
+index original..modified 100644
+--- a/App.tsx
++++ b/App.tsx
+@@ -7,6 +7,7 @@ import { App as CapacitorApp } from '@capacitor/app';
+ import { supabase } from './supabase';
+ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+ import L from 'leaflet';
++import { useToast } from './components/Toast';
+ 
+ // Destructure for easier usage in component, or just use api.method
+ const { getParkingZones, payParking: payForParking, getEvents, getNews, getLandmarks } = api;
+@@ -85,6 +86,7 @@ const Select: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = ({ clas
+ // --- App Component ---
+ export const App: React.FC = () => {
+     const { t, language, setLanguage } = useTranslation();
++    const { showToast } = useToast();
+     const [activeView, setActiveView] = useState(() => localStorage.getItem('lastActiveView') || 'dashboard');
+     const [theme, setTheme] = useState<'light' | 'dark'>('light');
+ 
+@@ -199,13 +201,14 @@ export const App: React.FC = () => {
+             });
+ 
+             if (error) {
+-                alert(t('error_code_mismatch'));
++                showToast(t('error_code_mismatch'), 'error');
+                 console.error('Verification error:', error);
+             } else {
+                 localStorage.setItem('isVerified', 'true');
+                 setIsVerified(true);
++                showToast('Phone verified successfully!', 'success');
+             }
+         } catch (err) {
+-            alert(t('error_code_mismatch'));
++            showToast(t('error_code_mismatch'), 'error');
+             console.error('Verification error:', err);
+         }
+     };
+@@ -227,8 +230,8 @@ export const App: React.FC = () => {
+ 
+     const handleSendCode = async () => {
+         if (phoneNumber.length < 8) {
+-            alert(t('error_phone_invalid'));
+-            return;
++            showToast(t('error_phone_invalid'), 'error');
++            return;
+         }
+ 
+         try {
+@@ -239,13 +242,13 @@ export const App: React.FC = () => {
+             });
+ 
+             if (error) {
+-                alert(`Error: ${error.message}`);
++                showToast(`Error: ${error.message}`, 'error');
+                 console.error('Send OTP error:', error);
+             } else {
+                 setShowVerificationInput(true);
+-                alert(t('code_sent'));
++                showToast(t('code_sent'), 'success');
+             }
+         } catch (err) {
+-            alert(`Error sending code: ${err}`);
++            showToast(`Error sending code: ${err}`, 'error');
+             console.error('Send OTP error:', err);
+         }
+     };
+@@ -549,6 +552,7 @@ const NavButton: React.FC<{ icon: string; label: string; active: boolean; onCli
+ 
+ const ReportView: React.FC<{ onViewChange: (view: string) => void, photos: string[], setPhotos: React.Dispatch<React.SetStateAction<string[]>> }> = ({ onViewChange, photos, setPhotos }) => {
+     const { t } = useTranslation();
++    const { showToast } = useToast();
+     // Photos state lifted to App component
+     const [location, setLocation] = useState<GeolocationState | null>(null);
+     const [description, setDescription] = useState(() => localStorage.getItem('reportDescription') || '');
+@@ -623,7 +627,10 @@ const ReportView: React.FC<{ onViewChange: (view: string) => void, photos: stri
+     };
+ 
+     const handleSubmit = async () => {
+-        if (photos.length === 0 || !location) return alert(t('error_required_fields'));
++        if (photos.length === 0 || !location) {
++            showToast(t('error_required_fields'), 'warning');
++            return;
++        }
+ 
+         setAnalyzing(true);
+         try {
+@@ -631,9 +638,9 @@ const ReportView: React.FC<{ onViewChange: (view: string) => void, photos: stri
+             const { data: { user } } = await supabase.auth.getUser();
+             if (!user) {
+-                alert('Please log in to submit a report');
+-                setAnalyzing(false);
+-                return;
++                showToast('Please log in to submit a report', 'error');
++                setAnalyzing(false);
++                return;
+             }
+ 
+             const formData = new FormData();
+@@ -674,9 +681,10 @@ const ReportView: React.FC<{ onViewChange: (view: string) => void, photos: stri
+             localStorage.removeItem('reportDescription');
+             setAiResult({ title: report.title, category: report.category as ReportCategory });
+             setShowSuccess(true);
++            showToast('Report submitted successfully!', 'success');
+         } catch (e) {
+-            alert('Failed to submit report: ' + e);
+-            console.error(e);
++            showToast('Failed to submit report: ' + e, 'error');
++            console.error(e);
+         } finally {
+             setAnalyzing(false);
+         }
+@@ -794,6 +802,7 @@ const ReportView: React.FC<{ onViewChange: (view: string) => void, photos: stri
+ 
+ const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b: number) => void }> = ({ walletBalance, setWalletBalance }) => {
+     const { t } = useTranslation();
++    const { showToast } = useToast();
+     const [zones, setZones] = useState<ParkingZone[]>([]);
+     const [selectedZone, setSelectedZone] = useState<ParkingZone | null>(null);
+     const [hours, setHours] = useState(1);
+@@ -811,9 +820,15 @@ const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b: numb
+     }, []);
+ 
+     const handlePay = async () => {
+-        if (!selectedZone || !plate) return alert(t('error_enter_plate'));
++        if (!selectedZone || !plate) {
++            showToast(t('error_enter_plate'), 'warning');
++            return;
++        }
+         const totalCost = selectedZone.rate * hours;
+-        if (walletBalance < totalCost) return alert(t('error_insufficient_funds'));
++        if (walletBalance < totalCost) {
++            showToast(t('error_insufficient_funds'), 'error');
++            return;
++        }
+ 
+         setLoading(true);
+         try {
+@@ -821,9 +836,9 @@ const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b: numb
+             const { data: { user } } = await supabase.auth.getUser();
+             if (!user) {
+-                alert('Please log in to pay for parking');
+-                setLoading(false);
+-                return;
++                showToast('Please log in to pay for parking', 'error');
++                setLoading(false);
++                return;
+             }
+ 
+             await payForParking({
+@@ -840,11 +855,11 @@ const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b: numb
+             });
+ 
+             setWalletBalance(walletBalance - totalCost);
+-            alert(t('payment_successful'));
++            showToast(t('payment_successful'), 'success');
+             setPlate('');
+             const updated = await getParkingZones();
+             setZones(updated);
+         } catch (e) {
+-            alert('Payment failed: ' + e);
++            showToast('Payment failed: ' + e, 'error');
+         } finally {
+             setLoading(false);
+         }

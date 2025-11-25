@@ -14,6 +14,18 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
+    },
+    build: {
+      chunkSizeWarningLimit: 1000, // Increase limit to silence warning
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom'],
+            maps: ['leaflet', 'react-leaflet'],
+            utils: ['@capacitor/core', '@capacitor/app', '@capacitor/camera']
+          }
+        }
+      }
     }
   };
 });
