@@ -134,7 +134,7 @@ export const NewsView: React.FC = () => {
                                 }}
                             >
                                 <div
-                                    className="h-[33vh] sm:h-[40vh] overflow-x-auto snap-x snap-mandatory flex no-scrollbar bg-black"
+                                    className="h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar bg-black"
                                     onScroll={(e) => {
                                         const container = e.currentTarget;
                                         const scrollLeft = container.scrollLeft;
@@ -175,7 +175,7 @@ export const NewsView: React.FC = () => {
                         )}
 
                         {/* Content - Scrolls under photo */}
-                        <div className="bg-white dark:bg-slate-900 min-h-[67vh] sm:min-h-[60vh] p-6 space-y-4 rounded-t-3xl -mt-6 relative z-1">
+                        <div className="bg-white dark:bg-slate-900 min-h-screen p-6 space-y-4 rounded-t-3xl -mt-6  relative z-1">
                             <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold uppercase ${selectedNews.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
                                 {selectedNews.type}
                             </span>

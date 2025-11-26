@@ -134,7 +134,7 @@ export const MapView: React.FC = () => {
                         )}
 
                         {/* Content - Scrolls under photo */}
-                        <div className="bg-white dark:bg-slate-900 min-h-[67vh] sm:min-h-[60vh] p-6 rounded-t-3xl -mt-6 relative z-1 space-y-4">
+                        <div className="bg-white dark:bg-slate-900 min-h-screen p-6 rounded-t-3xl -mt-6 relative z-1 space-y-4">
                             <div className="flex items-center gap-2">
                                 <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400">
                                     {selectedLandmark.category}
