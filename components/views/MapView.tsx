@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Landmark } from '../../types';
 import { api } from '../../services/api';
 import { useTranslation } from '../../i18n';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import { Icon, Icons, Button } from '../ui';
+import { Icon, Icons, Button, Card } from '../ui';
 
 const { getLandmarks } = api;
 
@@ -12,6 +11,7 @@ export const MapView: React.FC = () => {
     const [landmarks, setLandmarks] = useState<Landmark[]>([]);
     const [selectedLandmark, setSelectedLandmark] = useState<Landmark | null>(null);
     const [loading, setLoading] = useState(true);
+    const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
     useEffect(() => {
         getLandmarks().then(data => {
@@ -51,43 +51,48 @@ export const MapView: React.FC = () => {
 
     return (
         <>
-            <div className="relative h-full pb-20">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">
-                    {t('map_view')}
+            <div className="space-y-4 pb-20">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    Explore Kicevo
                 </h2>
 
-                <div className="rounded-3xl overflow-hidden shadow-lg" style={{ height: 'calc(100vh - 200px)' }}>
-                    <MapContainer
-                        center={[41.5128, 20.9574]}
-                        zoom={13}
-                        style={{ height: '100%', width: '100%' }}
-                    >
-                        <TileLayer
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        />
+                {/* 2-Column Grid of Landmarks - Responsive */}
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+                    {landmarks.map((landmark) => (
+                        <Card
+                            key={landmark.id}
+                            className="p-0 overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+                            onClick={() => {
+                                setSelectedLandmark(landmark);
+                                setCurrentPhotoIndex(0);
+                            }}
+                        >
+                            {/* Photo */}
+                            {landmark.photo_url && (
+                                <div className="relative w-full h-32">
+                                    <img
+                                        src={landmark.photo_url}
+                                        alt={getTitle(landmark)}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            )}
 
-                        {landmarks.map((landmark) => (
-                            <Marker
-                                key={landmark.id}
-                                position={[landmark.latitude, landmark.longitude]}
-                                eventHandlers={{
-                                    click: () => setSelectedLandmark(landmark)
-                                }}
-                            >
-                                <Popup>
-                                    <div className="text-center">
-                                        <strong>{getTitle(landmark)}</strong>
-                                        <br />
-                                        <span className="text-xs text-slate-500">{landmark.category}</span>
-                                    </div>
-                                </Popup>
-                            </Marker>
-                        ))}
-                    </MapContainer>
+                            {/* Content */}
+                            <div className="p-3 space-y-2">
+                                <span className="inline-block px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 text-xs font-bold uppercase rounded">
+                                    {landmark.category}
+                                </span>
+                                <h3 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-2 leading-tight">
+                                    {getTitle(landmark)}
+                                </h3>
+                            </div>
+                        </Card>
+                    ))}
                 </div>
             </div>
 
+            {/* Landmark Details Modal */}
             {selectedLandmark && (
                 <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
                     <div className="flex items-center justify-between p-4 text-white">
@@ -96,30 +101,33 @@ export const MapView: React.FC = () => {
                             onClick={() => setSelectedLandmark(null)}
                             className="p-2 hover:bg-white/10 rounded-full transition-colors"
                         >
-                            <Icon path={Icons.x} size={24} />
+                            <Icon path={Icons.close} size={24} />
                         </button>
                     </div>
 
+                    {/* Horizontal Scroll Photo Carousel */}
                     {selectedLandmark.photo_url && (
-                        <div className="flex-1 flex items-center justify-center p-4">
-                            <img
-                                src={selectedLandmark.photo_url}
-                                alt={getTitle(selectedLandmark)}
-                                className="max-w-full max-h-full object-contain rounded-2xl"
-                            />
+                        <div className="relative flex-1">
+                            <div className="h-full flex items-center justify-center p-4">
+                                <img
+                                    src={selectedLandmark.photo_url}
+                                    alt={getTitle(selectedLandmark)}
+                                    className="max-w-full max-h-full object-contain rounded-2xl"
+                                />
+                            </div>
                         </div>
                     )}
 
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-t-3xl">
-                        <div className="flex items-center gap-2 mb-3">
-                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
+                    <div className="bg-white dark:bg-slate-900 p-6 rounded-t-3xl space-y-4">
+                        <div className="flex items-center gap-2">
+                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400">
                                 {selectedLandmark.category}
                             </span>
                         </div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
                             {getTitle(selectedLandmark)}
                         </h2>
-                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
+                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
                             {getDescription(selectedLandmark)}
                         </p>
 

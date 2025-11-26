@@ -12,9 +12,6 @@ export const NewsView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-    const [touchStart, setTouchStart] = useState(0);
-    const [touchEnd, setTouchEnd] = useState(0);
-    const [isTransitioning, setIsTransitioning] = useState(false);
 
     useEffect(() => {
         getNews().then(data => {
@@ -46,40 +43,6 @@ export const NewsView: React.FC = () => {
         return news[descKey] || news.description_en || news.description || '';
     };
 
-    // Swipe handlers
-    const handleTouchStart = (e: React.TouchEvent) => {
-        setTouchStart(e.targetTouches[0].clientX);
-    };
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        setTouchEnd(e.targetTouches[0].clientX);
-    };
-
-    const handleTouchEnd = () => {
-        if (!selectedNews?.photo_urls || isTransitioning) return;
-
-        const swipeDistance = touchStart - touchEnd;
-        const minSwipeDistance = 50;
-
-        if (Math.abs(swipeDistance) > minSwipeDistance) {
-            setIsTransitioning(true);
-
-            if (swipeDistance > 0) {
-                // Swiped left - next photo
-                if (currentPhotoIndex < selectedNews.photo_urls.length - 1) {
-                    setCurrentPhotoIndex(prev => prev + 1);
-                }
-            } else {
-                // Swiped right - previous photo  
-                if (currentPhotoIndex > 0) {
-                    setCurrentPhotoIndex(prev => prev - 1);
-                }
-            }
-
-            setTimeout(() => setIsTransitioning(false), 300);
-        }
-    };
-
     if (loading) {
         return (
             <div className="h-full flex items-center justify-center">
@@ -91,26 +54,26 @@ export const NewsView: React.FC = () => {
     return (
         <>
             <div className="space-y-4 pb-20">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('news')}</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t('news')}</h2>
                 {news.length === 0 ? (
                     <p className="text-slate-500 text-center py-10">No news available</p>
                 ) : (
                     news.map(item => (
                         <Card
                             key={item.id}
-                            className="p-5 flex flex-col gap-3 cursor-pointer hover:shadow-lg transition-shadow"
+                            className="p-0 overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                             onClick={() => {
                                 setSelectedNews(item);
                                 setCurrentPhotoIndex(0);
                             }}
                         >
-                            {/* Photo thumbnail */}
+                            {/* Photo thumbnail - Full Width */}
                             {item.photo_urls && item.photo_urls.length > 0 && (
-                                <div className="relative w-full h-48 -mx-5 -mt-5 mb-3">
+                                <div className="relative w-full h-48">
                                     <img
                                         src={item.photo_urls[0]}
                                         alt={getNewsTitle(item)}
-                                        className="w-full h-full object-cover rounded-t-2xl"
+                                        className="w-full h-full object-cover"
                                     />
                                     {item.photo_urls.length > 1 && (
                                         <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 rounded-md text-xs">
@@ -120,14 +83,17 @@ export const NewsView: React.FC = () => {
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-start">
-                                <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${item.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
-                                    {item.type}
-                                </span>
-                                <span className="text-xs text-slate-400">{formatDate(item.start_date)}</span>
+                            {/* Content with padding */}
+                            <div className="p-5 flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <span className={`px-2 py-1 rounded-md text-xs font-bold uppercase ${item.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+                                        {item.type}
+                                    </span>
+                                    <span className="text-xs text-slate-400">{formatDate(item.start_date)}</span>
+                                </div>
+                                <h3 className="font-bold text-lg text-slate-900 dark:text-white">{getNewsTitle(item)}</h3>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{getNewsDescription(item)}</p>
                             </div>
-                            <h3 className="font-bold text-lg text-slate-900 dark:text-white">{getNewsTitle(item)}</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">{getNewsDescription(item)}</p>
                         </Card>
                     ))
                 )}
@@ -147,20 +113,33 @@ export const NewsView: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Photo Carousel with Swipe */}
+                    {/* Horizontal Scroll Photo Carousel */}
                     {selectedNews.photo_urls && selectedNews.photo_urls.length > 0 && (
-                        <div
-                            className="relative flex-1 flex items-center justify-center overflow-hidden"
-                            onTouchStart={handleTouchStart}
-                            onTouchMove={handleTouchMove}
-                            onTouchEnd={handleTouchEnd}
-                        >
-                            <img
-                                src={selectedNews.photo_urls[currentPhotoIndex]}
-                                alt={getNewsTitle(selectedNews)}
-                                className={`max-w-full max-h-full object-contain transition-all duration-300 ${isTransitioning ? 'scale-95 opacity-70' : 'scale-100 opacity-100'}`}
-                                style={{ objectPosition: 'center' }}
-                            />
+                        <div className="relative flex-1">
+                            <div
+                                className="h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar"
+                                onScroll={(e) => {
+                                    const container = e.currentTarget;
+                                    const scrollLeft = container.scrollLeft;
+                                    const itemWidth = container.offsetWidth;
+                                    const newIndex = Math.round(scrollLeft / itemWidth);
+                                    setCurrentPhotoIndex(newIndex);
+                                }}
+                            >
+                                {selectedNews.photo_urls.map((photoUrl, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center p-4"
+                                    >
+                                        <img
+                                            src={photoUrl}
+                                            alt={`${getNewsTitle(selectedNews)} - Photo ${index + 1}`}
+                                            className="max-w-full max-h-full object-contain"
+                                            style={{ objectPosition: 'center' }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
 
                             {/* Photo dots indicator */}
                             {selectedNews.photo_urls.length > 1 && (

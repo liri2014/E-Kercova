@@ -229,14 +229,14 @@ export const App: React.FC = () => {
         <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 max-w-md mx-auto shadow-2xl overflow-hidden">
             {/* Header with Safe Area Support */}
             <div
-                className="absolute top-0 left-0 right-0 px-6 flex items-center justify-between z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50"
+                className="fixed top-0 left-0 right-0 px-4 sm:px-6 flex items-center justify-between z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 max-w-md mx-auto"
                 style={{ paddingTop: 'max(16px, env(safe-area-inset-top))', height: 'calc(64px + env(safe-area-inset-top))' }}
             >
                 <div className="flex items-center gap-2" onClick={() => setActiveView('dashboard')}>
                     <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
                         <Icon path={Icons.building} className="text-white" size={18} />
                     </div>
-                    <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight">{t('app_title')}</span>
+                    <span className="font-bold text-base sm:text-lg text-slate-900 dark:text-white tracking-tight">{t('app_title')}</span>
                 </div>
                 <div className="flex items-center gap-3">
                     <button onClick={() => setActiveView('wallet')} className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-full">
@@ -248,7 +248,7 @@ export const App: React.FC = () => {
 
             {/* Scrollable Content with Padding for Header and Nav */}
             <main
-                className="absolute left-0 right-0 overflow-y-auto no-scrollbar p-4"
+                className="absolute left-0 right-0 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 py-4"
                 style={{
                     top: '0',
                     paddingTop: 'calc(80px + env(safe-area-inset-top))', // Added padding for header
@@ -262,7 +262,7 @@ export const App: React.FC = () => {
 
             {/* Bottom Navigation with Safe Area Support */}
             <div
-                className="absolute bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between z-30"
+                className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between z-30 max-w-md mx-auto"
                 style={{
                     paddingBottom: 'env(safe-area-inset-bottom)',
                     height: 'calc(80px + env(safe-area-inset-bottom))'
@@ -327,32 +327,34 @@ const HomeView: React.FC<{ onViewChange: (view: string) => void, walletBalance: 
         <div className="space-y-6 pb-6">
             {/* Greeting */}
             <div>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{greeting}, Citizen</h2>
-                <p className="text-slate-500">{t('how_can_we_help')}</p>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{greeting}, Citizen</h2>
+                <p className="text-sm sm:text-base text-slate-500">{t('how_can_we_help')}</p>
             </div>
 
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-2 gap-4">
-                <ServiceCard id="home-service-report" icon={Icons.report} title={t('report_new_issue')} color="bg-rose-500" onClick={() => onViewChange('report')} />
-                <ServiceCard id="home-service-parking" icon={Icons.parking} title={t('parking')} color="bg-indigo-500" onClick={() => onViewChange('parking')} />
-                <ServiceCard icon={Icons.calendarDays} title={t('events')} color="bg-orange-500" onClick={() => onViewChange('events')} />
-                <ServiceCard id="home-service-news" icon={Icons.news} title={t('news')} color="bg-emerald-500" onClick={() => onViewChange('news')} />
-                <ServiceCard icon={Icons.map} title={t('map_view')} color="bg-cyan-500" onClick={() => onViewChange('map')} />
-                <ServiceCard icon={Icons.history} title={t('report_history')} color="bg-slate-500" onClick={() => onViewChange('history')} />
-            </div>
-
-            {/* Mini Wallet Widget */}
+            {/* Mini Wallet Widget - Moved to Top */}
             <Card id="home-service-wallet" className="p-5 bg-gradient-to-br from-indigo-600 to-purple-700 border-none text-white" onClick={() => onViewChange('wallet')}>
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="text-indigo-100 text-sm font-medium">{t('current_balance')}</p>
-                        <h3 className="text-3xl font-bold mt-1">{walletBalance} <span className="text-lg font-normal opacity-80">MKD</span></h3>
+                        <h3 className="text-2xl sm:text-3xl font-bold mt-1">{walletBalance} <span className="text-base sm:text-lg font-normal opacity-80">MKD</span></h3>
                     </div>
                     <div className="p-2 bg-white/10 rounded-xl backdrop-blur-sm">
                         <Icon path={Icons.wallet} className="text-white" />
                     </div>
                 </div>
             </Card>
+
+            {/* Quick Actions Grid */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <ServiceCard id="home-service-report" icon={Icons.report} title={t('report_new_issue')} color="bg-rose-500" onClick={() => onViewChange('report')} />
+                <ServiceCard id="home-service-parking" icon={Icons.parking} title={t('parking')} color="bg-indigo-500" onClick={() => onViewChange('parking')} />
+                <ServiceCard icon={Icons.calendarDays} title={t('events')} color="bg-orange-500" onClick={() => onViewChange('events')} />
+                <ServiceCard id="home-service-news" icon={Icons.news} title={t('news')} color="bg-emerald-500" onClick={() => onViewChange('news')} />
+                <ServiceCard icon={Icons.map} title="Explore Kicevo" color="bg-cyan-500" onClick={() => onViewChange('map')} />
+                <ServiceCard icon={Icons.history} title={t('report_history')} color="bg-slate-500" onClick={() => onViewChange('history')} />
+            </div>
+
+
 
             {/* News & Alerts Widget */}
             <div>
