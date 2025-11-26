@@ -102,7 +102,7 @@ export const NewsView: React.FC = () => {
 
             {/* Full-screen News Viewer Modal */}
             {selectedNews && (
-                <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col">
+                <div className="fixed inset-0 bg-black z-50 flex flex-col">
                     {/* Header */}
                     <div
                         className="flex items-center justify-between p-4 text-white bg-black/50 backdrop-blur-md z-10"
@@ -130,11 +130,11 @@ export const NewsView: React.FC = () => {
                             <div
                                 className="sticky top-0 z-0 transition-all duration-300 bg-black"
                                 style={{
-                                    height: `${Math.max(33, 100 - (scrollY / 10))}vh`
+                                    height: `${Math.max(33, 85 - (scrollY / 10))}vh`
                                 }}
                             >
                                 <div
-                                    className="h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar bg-black"
+                                    className="h-full w-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar bg-black"
                                     onScroll={(e) => {
                                         const container = e.currentTarget;
                                         const scrollLeft = container.scrollLeft;
@@ -159,7 +159,7 @@ export const NewsView: React.FC = () => {
 
                                 {/* Photo dots indicator */}
                                 {selectedNews.photo_urls.length > 1 && (
-                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                                         {selectedNews.photo_urls.map((_, index) => (
                                             <div
                                                 key={index}
@@ -175,7 +175,7 @@ export const NewsView: React.FC = () => {
                         )}
 
                         {/* Content - Scrolls under photo */}
-                        <div className="bg-white dark:bg-slate-900 min-h-screen p-6 space-y-4 rounded-t-3xl -mt-6  relative z-1">
+                        <div className="bg-white dark:bg-slate-900 min-h-[67vh] sm:min-h-[60vh] p-6 space-y-4 rounded-t-3xl -mt-6 relative z-1">
                             <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold uppercase ${selectedNews.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
                                 {selectedNews.type}
                             </span>

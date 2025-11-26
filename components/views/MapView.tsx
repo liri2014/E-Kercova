@@ -95,7 +95,7 @@ export const MapView: React.FC = () => {
 
             {/* Landmark Details Modal */}
             {selectedLandmark && (
-                <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col">
+                <div className="fixed inset-0 bg-black z-50 flex flex-col">
                     <div
                         className="flex items-center justify-between p-4 text-white bg-black/50 backdrop-blur-md z-10"
                         style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
@@ -122,7 +122,7 @@ export const MapView: React.FC = () => {
                             <div
                                 className="sticky top-0 z-0 bg-black transition-all duration-300"
                                 style={{
-                                    height: `${Math.max(33, 100 - (scrollY / 10))}vh`
+                                    height: `${Math.max(33, 85 - (scrollY / 10))}vh`
                                 }}
                             >
                                 <img
@@ -134,7 +134,7 @@ export const MapView: React.FC = () => {
                         )}
 
                         {/* Content - Scrolls under photo */}
-                        <div className="bg-white dark:bg-slate-900 min-h-screen p-6 rounded-t-3xl -mt-6 relative z-1 space-y-4">
+                        <div className="bg-white dark:bg-slate-900 min-h-[67vh] sm:min-h-[60vh] p-6 rounded-t-3xl -mt-6 relative z-1 space-y-4">
                             <div className="flex items-center gap-2">
                                 <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400">
                                     {selectedLandmark.category}

@@ -27,6 +27,22 @@ export const App: React.FC = () => {
         return stored ? JSON.parse(stored) : [];
     });
 
+    // Tutorial state - Force show for testing if needed, or use localStorage
+    const [showTutorial, setShowTutorial] = useState(() => {
+        // For testing: always show tutorial
+        // return true; 
+
+        // Production behavior:
+        const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+        return !hasSeenTutorial;
+    });
+
+    // TEMPORARY: Reset tutorial for this session to ensure it shows for the user
+    useEffect(() => {
+        localStorage.removeItem('hasSeenTutorial');
+        setShowTutorial(true);
+    }, []);
+
     useEffect(() => {
         localStorage.setItem('reportPhotos', JSON.stringify(photos));
     }, [photos]);
@@ -387,10 +403,25 @@ const HomeView: React.FC<{ onViewChange: (view: string) => void, walletBalance: 
                             {latestNews.photo_urls && latestNews.photo_urls.length > 0 && (
                                 <div className="flex-shrink-0">
                                     <img
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
-                                        {getNewsDescription(latestNews)}
-                                    </p>
+                                        src={latestNews.photo_urls[0]}
+                                        alt={getNewsTitle(latestNews)}
+                                        className="w-20 h-20 object-cover rounded-xl"
+                                    />
                                 </div>
+                            )}
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                                <span className="inline-block px-2 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-bold uppercase rounded mb-1">
+                                    {latestNews.type || 'NEWS'}
+                                </span>
+                                <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-tight mb-1 line-clamp-1">
+                                    {getNewsTitle(latestNews)}
+                                </h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                                    {getNewsDescription(latestNews)}
+                                </p>
+                            </div>
                         </div>
                     </Card>
                 ) : (
