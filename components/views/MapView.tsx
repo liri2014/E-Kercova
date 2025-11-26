@@ -94,8 +94,11 @@ export const MapView: React.FC = () => {
 
             {/* Landmark Details Modal */}
             {selectedLandmark && (
-                <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
-                    <div className="flex items-center justify-between p-4 text-white">
+                <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col">
+                    <div
+                        className="flex items-center justify-between p-4 text-white bg-black/50 backdrop-blur-md z-10"
+                        style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
+                    >
                         <span className="text-sm capitalize">{selectedLandmark.category}</span>
                         <button
                             onClick={() => setSelectedLandmark(null)}
@@ -105,45 +108,47 @@ export const MapView: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Horizontal Scroll Photo Carousel */}
-                    {selectedLandmark.photo_url && (
-                        <div className="relative flex-1">
-                            <div className="h-full flex items-center justify-center p-4">
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto">
+                        {/* Photo - Sticky at top */}
+                        {selectedLandmark.photo_url && (
+                            <div className="sticky top-0 z-0 h-[33vh] sm:h-[40vh] bg-black">
                                 <img
                                     src={selectedLandmark.photo_url}
                                     alt={getTitle(selectedLandmark)}
-                                    className="max-w-full max-h-full object-contain rounded-2xl"
+                                    className="w-full h-full object-cover"
                                 />
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    <div className="bg-white dark:bg-slate-900 p-6 rounded-t-3xl space-y-4">
-                        <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400">
-                                {selectedLandmark.category}
-                            </span>
-                        </div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                            {getTitle(selectedLandmark)}
-                        </h2>
-                        <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                            {getDescription(selectedLandmark)}
-                        </p>
+                        {/* Content - Scrolls under photo */}
+                        <div className="bg-white dark:bg-slate-900 min-h-[67vh] sm:min-h-[60vh] p-6 rounded-t-3xl -mt-6 relative z-1 space-y-4">
+                            <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400">
+                                    {selectedLandmark.category}
+                                </span>
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                                {getTitle(selectedLandmark)}
+                            </h2>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-base">
+                                {getDescription(selectedLandmark)}
+                            </p>
 
-                        <Button
-                            variant="primary"
-                            fullWidth
-                            onClick={() => openNativeMap(
-                                selectedLandmark.latitude,
-                                selectedLandmark.longitude,
-                                getTitle(selectedLandmark)
-                            )}
-                            className="gap-2"
-                        >
-                            <Icon path={Icons.location} size={20} />
-                            {t('get_directions')}
-                        </Button>
+                            <Button
+                                variant="primary"
+                                fullWidth
+                                onClick={() => openNativeMap(
+                                    selectedLandmark.latitude,
+                                    selectedLandmark.longitude,
+                                    getTitle(selectedLandmark)
+                                )}
+                                className="gap-2 mt-6"
+                            >
+                                <Icon path={Icons.location} size={20} />
+                                {t('get_directions')}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}

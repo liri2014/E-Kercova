@@ -101,9 +101,12 @@ export const NewsView: React.FC = () => {
 
             {/* Full-screen News Viewer Modal */}
             {selectedNews && (
-                <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
+                <div className="fixed inset-0 bg-slate-900 z-50 flex flex-col">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 text-white">
+                    <div
+                        className="flex items-center justify-between p-4 text-white bg-black/50 backdrop-blur-md z-10"
+                        style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
+                    >
                         <span className="text-sm">{formatDate(selectedNews.start_date)}</span>
                         <button
                             onClick={() => setSelectedNews(null)}
@@ -113,58 +116,60 @@ export const NewsView: React.FC = () => {
                         </button>
                     </div>
 
-                    {/* Horizontal Scroll Photo Carousel */}
-                    {selectedNews.photo_urls && selectedNews.photo_urls.length > 0 && (
-                        <div className="relative flex-1">
-                            <div
-                                className="h-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar"
-                                onScroll={(e) => {
-                                    const container = e.currentTarget;
-                                    const scrollLeft = container.scrollLeft;
-                                    const itemWidth = container.offsetWidth;
-                                    const newIndex = Math.round(scrollLeft / itemWidth);
-                                    setCurrentPhotoIndex(newIndex);
-                                }}
-                            >
-                                {selectedNews.photo_urls.map((photoUrl, index) => (
-                                    <div
-                                        key={index}
-                                        className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center p-4"
-                                    >
-                                        <img
-                                            src={photoUrl}
-                                            alt={`${getNewsTitle(selectedNews)} - Photo ${index + 1}`}
-                                            className="max-w-full max-h-full object-contain"
-                                            style={{ objectPosition: 'center' }}
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Photo dots indicator */}
-                            {selectedNews.photo_urls.length > 1 && (
-                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                                    {selectedNews.photo_urls.map((_, index) => (
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto">
+                        {/* Horizontal Scroll Photo Carousel - Sticky at top */}
+                        {selectedNews.photo_urls && selectedNews.photo_urls.length > 0 && (
+                            <div className="sticky top-0 z-0">
+                                <div
+                                    className="h-[33vh] sm:h-[40vh] overflow-x-auto snap-x snap-mandatory flex no-scrollbar bg-black"
+                                    onScroll={(e) => {
+                                        const container = e.currentTarget;
+                                        const scrollLeft = container.scrollLeft;
+                                        const itemWidth = container.offsetWidth;
+                                        const newIndex = Math.round(scrollLeft / itemWidth);
+                                        setCurrentPhotoIndex(newIndex);
+                                    }}
+                                >
+                                    {selectedNews.photo_urls.map((photoUrl, index) => (
                                         <div
                                             key={index}
-                                            className={`h-2 rounded-full transition-all duration-300 ${index === currentPhotoIndex
-                                                ? 'w-8 bg-white'
-                                                : 'w-2 bg-white/40'
-                                                }`}
-                                        />
+                                            className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center"
+                                        >
+                                            <img
+                                                src={photoUrl}
+                                                alt={`${getNewsTitle(selectedNews)} - Photo ${index + 1}`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
                                     ))}
                                 </div>
-                            )}
-                        </div>
-                    )}
 
-                    {/* Content */}
-                    <div className="bg-slate-900 text-white p-6 space-y-3 max-h-[40vh] overflow-y-auto">
-                        <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold uppercase ${selectedNews.type === NewsType.CONSTRUCTION ? 'bg-orange-500/20 text-orange-300' : 'bg-blue-500/20 text-blue-300'}`}>
-                            {selectedNews.type}
-                        </span>
-                        <h2 className="text-2xl font-bold">{getNewsTitle(selectedNews)}</h2>
-                        <p className="text-slate-300 leading-relaxed">{getNewsDescription(selectedNews)}</p>
+                                {/* Photo dots indicator */}
+                                {selectedNews.photo_urls.length > 1 && (
+                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                        {selectedNews.photo_urls.map((_, index) => (
+                                            <div
+                                                key={index}
+                                                className={`h-2 rounded-full transition-all duration-300 ${index === currentPhotoIndex
+                                                    ? 'w-8 bg-white'
+                                                    : 'w-2 bg-white/40'
+                                                    }`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Content - Scrolls under photo */}
+                        <div className="bg-white dark:bg-slate-900 min-h-[67vh] sm:min-h-[60vh] p-6 space-y-4 rounded-t-3xl -mt-6 relative z-1">
+                            <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold uppercase ${selectedNews.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+                                {selectedNews.type}
+                            </span>
+                            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{getNewsTitle(selectedNews)}</h2>
+                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-base">{getNewsDescription(selectedNews)}</p>
+                        </div>
                     </div>
                 </div>
             )}

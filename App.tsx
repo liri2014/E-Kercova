@@ -251,7 +251,7 @@ export const App: React.FC = () => {
                 className="absolute left-0 right-0 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 py-4"
                 style={{
                     top: '0',
-                    paddingTop: 'calc(80px + env(safe-area-inset-top))', // Added padding for header
+                    paddingTop: 'calc(84px + env(safe-area-inset-top))', // Increased padding
                     bottom: 'calc(80px + env(safe-area-inset-bottom))'
                 }}
             >

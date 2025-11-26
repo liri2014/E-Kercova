@@ -194,6 +194,9 @@ const translations = {
     tutorial_parking_desc: "Easily manage and pay for parking in different city zones directly from the app.",
     tutorial_wallet_title: "Your Digital Wallet",
     tutorial_wallet_desc: "This is your balance. Add funds here to pay for parking and other services seamlessly.",
+    get_directions: "Get Directions",
+    report_details: "Report Details",
+    no_photo: "No Photo",
   },
   mk: {
     // Onboarding
@@ -396,6 +399,11 @@ const translations = {
     tutorial_parking_desc: "Лесно управувајте и плаќајте за паркинг во различни градски зони директно од апликацијата.",
     tutorial_wallet_title: "Вашиот дигитален паричник",
     tutorial_wallet_desc: "Ова е вашето салдо. Додадете средства тука за непречено плаќање на паркинг и други услуги.",
+    get_directions: "Насоки до локација",
+    report_details: "Детали за пријавата",
+    no_photo: "Нема фотографија",
+    fetching_location: "Се добива локација...",
+    please_wait_gps: "Ве молиме почекајте додека ги добиваме вашите GPS координати.",
   },
   sq: {
     // Onboarding
@@ -598,6 +606,12 @@ const translations = {
     tutorial_parking_desc: "Menaxhoni dhe paguani lehtësisht për parking në zona të ndryshme të qytetit direkt nga aplikacioni.",
     tutorial_wallet_title: "Portofoli Juaj Dixhital",
     tutorial_wallet_desc: "Ky është bilanci juaj. Shtoni fonde këtu për të paguar pa probleme për parking dhe shërbime të tjera.",
+    get_directions: "Merr Udhëzime",
+    report_details: "Detajet e Raportit",
+    no_photo: "Nuk ka Foto",
+    location_acquiring: "Po merret sinjali GPS...",
+    fetching_location: "Po merret vendndodhja...",
+    please_wait_gps: "Ju lutemi prisni ndërsa merrni koordinatat tuaja GPS.",
   },
 };
 

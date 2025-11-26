@@ -65,7 +65,7 @@ export const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b
 
             {/* Horizontal Scrolling Zone Cards */}
             <div className="overflow-x-auto -mx-4 px-4 no-scrollbar">
-                <div className="flex gap-4 pb-2">
+                <div className="flex gap-4 pb-2 pt-2">{/* Added pt-2 to prevent cut-off */}
                     {zones.map(zone => {
                         const isSelected = selectedZone?.id === zone.id;
                         const totalCapacity = zone.capacity || 0;
