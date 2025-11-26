@@ -12,6 +12,7 @@ export const MapView: React.FC = () => {
     const [selectedLandmark, setSelectedLandmark] = useState<Landmark | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+    const [scrollY, setScrollY] = useState(0);
 
     useEffect(() => {
         getLandmarks().then(data => {
@@ -109,10 +110,21 @@ export const MapView: React.FC = () => {
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto">
-                        {/* Photo - Sticky at top */}
+                    <div
+                        className="flex-1 overflow-y-auto"
+                        onScroll={(e) => {
+                            const scrollTop = e.currentTarget.scrollTop;
+                            setScrollY(scrollTop);
+                        }}
+                    >
+                        {/* Photo - Shrinks on scroll */}
                         {selectedLandmark.photo_url && (
-                            <div className="sticky top-0 z-0 h-[33vh] sm:h-[40vh] bg-black">
+                            <div
+                                className="sticky top-0 z-0 bg-black transition-all duration-300"
+                                style={{
+                                    height: `${Math.max(33, 100 - (scrollY / 10))}vh`
+                                }}
+                            >
                                 <img
                                     src={selectedLandmark.photo_url}
                                     alt={getTitle(selectedLandmark)}

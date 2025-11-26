@@ -8,7 +8,7 @@ import { supabase } from './supabase';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { TutorialOverlay } from './components/tutorial';
-import { Icon, Icons, Card, Button, Input, Select } from './components/ui';
+import { Icon, Icons, Card, Button, Input, Select, Toast } from './components/ui';
 import { MapView, ReportView, ParkingView, EventsView, NewsView, WalletView, PlaceholderView, HistoryView, MenuHub } from './components/views';
 
 // Destructure for easier usage in component, or just use api.method
@@ -39,6 +39,9 @@ export const App: React.FC = () => {
     const [verificationCode, setVerificationCode] = useState('');
     const [showVerificationInput, setShowVerificationInput] = useState(false);
     const [walletBalance, setWalletBalance] = useState(1250);
+
+    // Toast notification state
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
     // Initialize theme with system preference
     useEffect(() => {
@@ -130,14 +133,14 @@ export const App: React.FC = () => {
             });
 
             if (error) {
-                alert(t('error_code_mismatch'));
+                setToast({ message: t('error_code_mismatch'), type: 'error' });
                 console.error('Verification error:', error);
             } else {
                 localStorage.setItem('isVerified', 'true');
                 setIsVerified(true);
             }
         } catch (err) {
-            alert(t('error_code_mismatch'));
+            setToast({ message: t('error_code_mismatch'), type: 'error' });
             console.error('Verification error:', err);
         }
     };
@@ -159,7 +162,7 @@ export const App: React.FC = () => {
 
     const handleSendCode = async () => {
         if (phoneNumber.length < 8) {
-            alert(t('error_phone_invalid'));
+            setToast({ message: t('error_phone_invalid'), type: 'error' });
             return;
         }
 
@@ -172,14 +175,14 @@ export const App: React.FC = () => {
             });
 
             if (error) {
-                alert(`Error: ${error.message}`);
+                setToast({ message: `Error: ${error.message}`, type: 'error' });
                 console.error('Send OTP error:', error);
             } else {
                 setShowVerificationInput(true);
-                alert(t('code_sent'));
+                setToast({ message: t('code_sent'), type: 'success' });
             }
         } catch (err) {
-            alert(`Error sending code: ${err}`);
+            setToast({ message: `Error sending code: ${err}`, type: 'error' });
             console.error('Send OTP error:', err);
         }
     };
@@ -221,6 +224,15 @@ export const App: React.FC = () => {
                         </div>
                     )}
                 </Card>
+
+                {/* Toast Notifications */}
+                {toast && (
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast(null)}
+                    />
+                )}
             </div>
         );
     }

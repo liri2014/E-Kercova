@@ -12,6 +12,7 @@ export const NewsView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+    const [scrollY, setScrollY] = useState(0);
 
     useEffect(() => {
         getNews().then(data => {
@@ -117,10 +118,21 @@ export const NewsView: React.FC = () => {
                     </div>
 
                     {/* Scrollable Content */}
-                    <div className="flex-1 overflow-y-auto">
-                        {/* Horizontal Scroll Photo Carousel - Sticky at top */}
+                    <div
+                        className="flex-1 overflow-y-auto"
+                        onScroll={(e) => {
+                            const scrollTop = e.currentTarget.scrollTop;
+                            setScrollY(scrollTop);
+                        }}
+                    >
+                        {/* Horizontal Scroll Photo Carousel - Shrinks on scroll */}
                         {selectedNews.photo_urls && selectedNews.photo_urls.length > 0 && (
-                            <div className="sticky top-0 z-0">
+                            <div
+                                className="sticky top-0 z-0 transition-all duration-300 bg-black"
+                                style={{
+                                    height: `${Math.max(33, 100 - (scrollY / 10))}vh`
+                                }}
+                            >
                                 <div
                                     className="h-[33vh] sm:h-[40vh] overflow-x-auto snap-x snap-mandatory flex no-scrollbar bg-black"
                                     onScroll={(e) => {
