@@ -216,6 +216,19 @@ export const App: React.FC = () => {
                     {!showVerificationInput ? (
                         <div className="space-y-4">
                             <Input
+                                type="tel"
+                                placeholder={t('phone_placeholder')}
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value)}
+                            />
+                            <Button fullWidth onClick={handleSendCode}>
+                                {t('send_code')}
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <p className="text-sm text-slate-500">{t('enter_code_prompt')} <span className="font-semibold text-slate-900 dark:text-white">{phoneNumber}</span></p>
+                            <Input
                                 type="text"
                                 placeholder="123456"
                                 value={verificationCode}
