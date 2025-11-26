@@ -122,7 +122,7 @@ export const MapView: React.FC = () => {
                             <div
                                 className="sticky top-0 z-0 bg-black transition-all duration-300"
                                 style={{
-                                    height: `${Math.max(33, 85 - (scrollY / 10))}vh`
+                                    height: `${Math.max(33, 50 - (scrollY / 10))}vh`
                                 }}
                             >
                                 <img

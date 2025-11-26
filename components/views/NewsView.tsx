@@ -130,7 +130,7 @@ export const NewsView: React.FC = () => {
                             <div
                                 className="sticky top-0 z-0 transition-all duration-300 bg-black"
                                 style={{
-                                    height: `${Math.max(33, 85 - (scrollY / 10))}vh`
+                                    height: `${Math.max(33, 50 - (scrollY / 10))}vh`
                                 }}
                             >
                                 <div
