@@ -27,21 +27,11 @@ export const App: React.FC = () => {
         return stored ? JSON.parse(stored) : [];
     });
 
-    // Tutorial state - Force show for testing if needed, or use localStorage
+    // Tutorial state - Production behavior: only show if not seen before
     const [showTutorial, setShowTutorial] = useState(() => {
-        // For testing: always show tutorial
-        // return true; 
-
-        // Production behavior:
         const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
         return !hasSeenTutorial;
     });
-
-    // TEMPORARY: Reset tutorial for this session to ensure it shows for the user
-    useEffect(() => {
-        localStorage.removeItem('hasSeenTutorial');
-        setShowTutorial(true);
-    }, []);
 
     useEffect(() => {
         localStorage.setItem('reportPhotos', JSON.stringify(photos));
@@ -255,6 +245,16 @@ export const App: React.FC = () => {
 
     return (
         <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 max-w-md mx-auto shadow-2xl overflow-hidden">
+            {/* Tutorial Overlay */}
+            {showTutorial && (
+                <TutorialOverlay
+                    onComplete={() => {
+                        localStorage.setItem('hasSeenTutorial', 'true');
+                        setShowTutorial(false);
+                    }}
+                />
+            )}
+
             {/* Header with Safe Area Support */}
             <div
                 className="fixed top-0 left-0 right-0 px-4 sm:px-6 flex items-center justify-between z-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-800/50 max-w-md mx-auto"
