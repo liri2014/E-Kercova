@@ -27,11 +27,21 @@ export const App: React.FC = () => {
         return stored ? JSON.parse(stored) : [];
     });
 
-    // Tutorial state - Production behavior: only show if not seen before
+    // Tutorial state - Force show for testing if needed, or use localStorage
     const [showTutorial, setShowTutorial] = useState(() => {
+        // For testing: always show tutorial
+        // return true; 
+
+        // Production behavior:
         const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
         return !hasSeenTutorial;
     });
+
+    // TEMPORARY: Reset tutorial for this session to ensure it shows for the user
+    useEffect(() => {
+        localStorage.removeItem('hasSeenTutorial');
+        setShowTutorial(true);
+    }, []);
 
     useEffect(() => {
         localStorage.setItem('reportPhotos', JSON.stringify(photos));

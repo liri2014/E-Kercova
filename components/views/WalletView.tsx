@@ -1,16 +1,97 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../i18n';
 import { Icon, Icons } from '../ui';
 
-// Dummy transactions data
-const RECENT_TRANSACTIONS = [
-    { id: 1, title: 'Parking Zone K11', date: 'Today, 10:23 AM', amount: -40, type: 'parking' },
-    { id: 2, title: 'Wallet Top Up', date: 'Yesterday', amount: 500, type: 'topup' },
-    { id: 3, title: 'Parking Zone K12', date: 'Mon, 14:00', amount: -40, type: 'parking' },
-];
+// Transaction type definition
+export interface Transaction {
+    id: string;
+    title: string;
+    date: string;
+    amount: number;
+    type: 'parking' | 'topup';
+    timestamp: number;
+}
+
+// Helper to load transactions from localStorage
+const loadTransactions = (): Transaction[] => {
+    try {
+        const stored = localStorage.getItem('walletTransactions');
+        return stored ? JSON.parse(stored) : [];
+    } catch {
+        return [];
+    }
+};
+
+// Helper to save transactions to localStorage
+export const saveTransaction = (transaction: Omit<Transaction, 'id' | 'timestamp'>) => {
+    const transactions = loadTransactions();
+    const newTransaction: Transaction = {
+        ...transaction,
+        id: Date.now().toString(),
+        timestamp: Date.now()
+    };
+    transactions.unshift(newTransaction); // Add to beginning
+    localStorage.setItem('walletTransactions', JSON.stringify(transactions.slice(0, 50))); // Keep last 50
+};
+
+// Helper to format transaction date
+const formatTransactionDate = (timestamp: number): string => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const oneDay = 24 * 60 * 60 * 1000;
+
+    if (diff < oneDay && new Date(timestamp).getDate() === new Date(now).getDate()) {
+        return `Today, ${new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+    } else if (diff < 2 * oneDay && new Date(timestamp).getDate() === new Date(now - oneDay).getDate()) {
+        return 'Yesterday';
+    } else {
+        return new Date(timestamp).toLocaleDateString('en-US', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+};
 
 export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => void }> = ({ balance, setBalance }) => {
     const { t } = useTranslation();
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+    // Load transactions on mount and when localStorage changes
+    useEffect(() => {
+        const loadAndSetTransactions = () => {
+            setTransactions(loadTransactions());
+        };
+
+        loadAndSetTransactions();
+
+        // Listen for storage changes (transactions added from other components)
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'walletTransactions') {
+                loadAndSetTransactions();
+            }
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+
+        // Custom event for same-window updates
+        const handleLocalUpdate = () => loadAndSetTransactions();
+        window.addEventListener('transactionAdded', handleLocalUpdate);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('transactionAdded', handleLocalUpdate);
+        };
+    }, []);
+
+    const handleAddFunds = () => {
+        const amount = 500;
+        setBalance(balance + amount);
+        saveTransaction({
+            title: 'Wallet Top Up',
+            date: formatTransactionDate(Date.now()),
+            amount: amount,
+            type: 'topup'
+        });
+        // Trigger local update
+        window.dispatchEvent(new Event('transactionAdded'));
+    };
 
     return (
         <div className="space-y-8 pb-24">
@@ -47,7 +128,7 @@ export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => 
             {/* Actions */}
             <div className="grid grid-cols-2 gap-4">
                 <button
-                    onClick={() => setBalance(balance + 500)}
+                    onClick={handleAddFunds}
                     className="flex items-center justify-center gap-3 py-4 px-6 bg-[#1a1f37] dark:bg-slate-800 rounded-2xl text-indigo-400 font-bold shadow-lg shadow-indigo-900/10 active:scale-95 transition-all border border-indigo-500/10 hover:bg-[#232946]"
                 >
                     <Icon path={Icons.plus} size={20} strokeWidth={3} />
@@ -65,22 +146,28 @@ export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => 
             <div>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-5">Recent Transactions</h3>
                 <div className="space-y-3">
-                    {RECENT_TRANSACTIONS.map(tx => (
-                        <div key={tx.id} className="flex items-center justify-between p-4 bg-[#1a1f37] dark:bg-slate-900 rounded-3xl border border-slate-800/50 shadow-sm hover:bg-[#232946] transition-colors cursor-pointer group">
-                            <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${tx.type === 'topup' ? 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20' : 'bg-slate-700/30 text-slate-300 group-hover:bg-slate-700/50'}`}>
-                                    <Icon path={tx.type === 'topup' ? Icons.plus : Icons.parking} size={24} strokeWidth={2} />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-white text-base mb-0.5">{tx.title}</h4>
-                                    <p className="text-slate-400 text-xs font-medium">{tx.date}</p>
-                                </div>
-                            </div>
-                            <span className={`font-bold text-base ${tx.amount > 0 ? 'text-emerald-500' : 'text-white'}`}>
-                                {tx.amount > 0 ? '+' : ''}{tx.amount} MKD
-                            </span>
+                    {transactions.length === 0 ? (
+                        <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+                            <p>No transactions yet</p>
                         </div>
-                    ))}
+                    ) : (
+                        transactions.map(tx => (
+                            <div key={tx.id} className="flex items-center justify-between p-4 bg-[#1a1f37] dark:bg-slate-900 rounded-3xl border border-slate-800/50 shadow-sm hover:bg-[#232946] transition-colors cursor-pointer group">
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${tx.type === 'topup' ? 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20' : 'bg-slate-700/30 text-slate-300 group-hover:bg-slate-700/50'}`}>
+                                        <Icon path={tx.type === 'topup' ? Icons.plus : Icons.parking} size={24} strokeWidth={2} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-white text-base mb-0.5">{tx.title}</h4>
+                                        <p className="text-slate-400 text-xs font-medium">{tx.date}</p>
+                                    </div>
+                                </div>
+                                <span className={`font-bold text-base ${tx.amount > 0 ? 'text-emerald-500' : 'text-white'}`}>
+                                    {tx.amount > 0 ? '+' : ''}{tx.amount} MKD
+                                </span>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
         </div>

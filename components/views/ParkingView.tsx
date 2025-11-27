@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { useTranslation } from '../../i18n';
 import { supabase } from '../../supabase';
 import { Card, Button } from '../ui';
+import { saveTransaction } from './WalletView';
 
 const { getParkingZones, payParking: payForParking } = api;
 
@@ -46,6 +47,23 @@ export const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b
             });
 
             setWalletBalance(walletBalance - totalCost);
+
+            // Record transaction
+            const now = Date.now();
+            const formatTransactionDate = (timestamp: number): string => {
+                return `Today, ${new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+            };
+
+            saveTransaction({
+                title: `Parking ${selectedZone.name}`,
+                date: formatTransactionDate(now),
+                amount: -totalCost,
+                type: 'parking'
+            });
+
+            // Trigger local update
+            window.dispatchEvent(new Event('transactionAdded'));
+
             alert(t('payment_successful'));
             setPlate('');
             const updated = await getParkingZones();
