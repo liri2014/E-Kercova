@@ -50,7 +50,10 @@ export const Content: React.FC = () => {
     }, [activeTab]);
 
     const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
+        const fileList = e.target.files;
+        if (!fileList) return;
+        
+        const files: File[] = Array.from(fileList);
         if (files.length + photoPreviewUrls.length > 3) {
             alert('Maximum 3 photos allowed');
             return;
@@ -59,7 +62,7 @@ export const Content: React.FC = () => {
         setSelectedPhotos([...selectedPhotos, ...files]);
 
         // Generate preview URLs
-        files.forEach(file => {
+        files.forEach((file: File) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setPhotoPreviewUrls(prev => [...prev, reader.result as string]);
