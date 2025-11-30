@@ -4,6 +4,7 @@ import { App } from './App';
 import { LanguageProvider } from './i18n';
 import { AuthProvider, ThemeProvider } from './contexts';
 import { ToastProvider } from './components/Toast';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -13,14 +14,16 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ToastProvider>
-      <LanguageProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ThemeProvider>
-      </LanguageProvider>
-    </ToastProvider>
+    <ErrorBoundary>
+      <ToastProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </ThemeProvider>
+        </LanguageProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

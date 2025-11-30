@@ -95,4 +95,21 @@ export const api = {
                 body: JSON.stringify({ year }),
             }),
     },
+
+    // Notifications
+    notifications: {
+        send: (data: { title: string; body: string; target: string }) =>
+            api.request('/api/notifications/send', {
+                method: 'POST',
+                body: JSON.stringify(data),
+            }),
+
+        getHistory: () =>
+            api.request('/api/notifications/history'),
+
+        delete: (id: string) =>
+            api.request(`/api/notifications/${id}`, {
+                method: 'DELETE',
+            }),
+    },
 };

@@ -23,6 +23,7 @@
   - "Spotlight" Tutorial Overlay implemented ✅
 - **Navigation**: Custom state-based navigation (`activeView` in `App.tsx`) ✅
 - **Internationalization**: Full i18n support for 3 languages (en, mk, sq) ✅
+- **Error Handling**: Global ErrorBoundary component ✅
 - **Features Implemented**:
   - **Dashboard (`HomeView`)**: Widgets for Wallet, Reporting, Parking, Events, News ✅
   - **Reporting (`ReportView`)**: Camera integration (Capacitor), photo storage, location tagging ✅
@@ -35,14 +36,23 @@
 - **Authentication**: Phone authentication via Supabase (OTP) ✅
 
 ### Admin Panel (`/admin-panel`)
-- Separate React application for administrators.
-- Likely handles management of Reports, News, Events, and Parking zones.
-- Has its own build process and dependencies.
+- **Dashboard**: Overview stats (reports, parking revenue, users) ✅
+- **Reports Management**: View, update status, delete citizen reports ✅
+- **Content Management**: News, Events, Landmarks CRUD with auto-translation ✅
+- **Parking Management**: Zone CRUD, transaction history ✅
+- **User Management**: View users, search/filter, change roles ✅
+- **Push Notifications**: Send notifications to all/citizens/admins ✅
+- **Re-translate Feature**: Regenerate translations when editing content ✅
 
 ### Backend (`/backend`)
-- Node.js/Express server.
-- Routes for handling specific logic (likely proxying requests or handling complex business logic not suitable for client-side).
-- Deployment configurations for Railway and Render.
+- Node.js/Express server ✅
+- Routes: analyze, auth, events, holidays, landmarks, news, notifications, parking, reports, translate ✅
+- Deployment configurations for Railway and Render ✅
+
+### CI/CD (`.github/workflows/`)
+- **ci.yml**: Build verification for frontend, admin panel, and backend ✅
+- **deploy.yml**: Auto-deploy to Vercel (admin) and Railway (backend) ✅
+- **PR Template**: Standardized pull request format ✅
 
 ## 2. What Is Working
 - **Build System**: Vite build scripts are present and functional ✅
@@ -53,30 +63,27 @@
 - **Internationalization**: Full i18n with 3 languages (en, mk, sq) - all translations complete ✅
 - **Android Build**: Gradle 8.13.1, SDK 35, keystore configured ✅
 - **Firebase**: google-services.json configured for push notifications ✅
+- **CI/CD**: GitHub Actions configured for automated builds and deployments ✅
 
 ## 3. What Needs to be Done / Recommendations
 
-### Immediate Actions (Priority)
-- [x] **Remove Tutorial Debug Code**: Removed debug code that forced tutorial every session (2025-11-30)
-- [x] **Cleanup**: Removed all backup files (`App.tsx.backup`, `*.phaseX.backup`) (2025-11-30)
-- [x] **i18n Fix**: Missing translations in mk/sq sections have been fixed (2025-11-30)
-- [x] **Security**: Added `keystore.properties` to `.gitignore` (2025-11-30)
+### Completed (2025-11-30)
+- [x] **Remove Tutorial Debug Code**: Removed debug code that forced tutorial every session
+- [x] **Cleanup**: Removed all backup files (`App.tsx.backup`, `*.phaseX.backup`)
+- [x] **i18n Fix**: Missing translations in mk/sq sections have been fixed
+- [x] **Security**: Added `keystore.properties` to `.gitignore`
+- [x] **Refactoring**: `App.tsx` reduced from 460+ lines to ~200 lines
+- [x] **Error Handling**: Added global ErrorBoundary component
+- [x] **Admin Panel - User Management**: View/manage users, change roles
+- [x] **Admin Panel - Re-translate**: Button to regenerate translations
+- [x] **Admin Panel - Push Notifications**: Send notifications to users
+- [x] **CI/CD**: GitHub Actions workflows for builds and deployments
 
-### Code Quality Improvements
-- [x] **Refactoring** (2025-11-30): 
-  - `App.tsx` reduced from 460+ lines to ~200 lines
-  - Created `contexts/AuthContext.tsx` for authentication state
-  - Created `contexts/ThemeContext.tsx` for theme management
-  - Created `components/VerificationScreen.tsx` for auth UI
-  - Created `components/views/HomeView.tsx` for dashboard
-  - Extracted `Header` and `BottomNavigation` components
-- [ ] **Backend Clarification**: Determine if the Node.js backend is strictly necessary or if Supabase Edge Functions could replace it
-
-### Missing / To Be Added
-- [ ] **Tests**: No testing setup (Unit or E2E) found
-- [ ] **CI/CD**: No GitHub Actions or similar workflows for automated testing/deployment
-- [ ] **Error Handling**: Global error boundary missing (though `Toast` is used for notifications)
+### Remaining / Future Enhancements
+- [ ] **Tests**: Unit and E2E testing setup
 - [ ] **Offline Support**: Robust offline queuing for reports needs verification
+- [ ] **Backend Clarification**: Evaluate if Supabase Edge Functions could replace Node.js backend
+- [ ] **Advanced Analytics**: Reports by category, trends over time
 
 ## 4. Development Commands
 
@@ -116,37 +123,73 @@ npx tsc --noEmit     # Check TypeScript without emitting
 4. Use keystore: `ekicevo-release.keystore`
 
 ### Backend Deployment
-- **Railway**: `railway.json` configured
+- **Railway**: `railway.json` configured (auto-deploy via GitHub Actions)
 - **Render**: `render.yaml` configured
 
 ### Admin Panel
-- **Vercel**: `vercel.json` configured in `/admin-panel`
+- **Vercel**: `vercel.json` configured (auto-deploy via GitHub Actions)
 
-## Directory Structure Summary
+### Required GitHub Secrets for CI/CD
+| Secret | Purpose |
+|--------|---------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
+| `VITE_API_URL` | Backend API URL |
+| `VERCEL_TOKEN` | Vercel deployment token |
+| `VERCEL_ORG_ID` | Vercel organization ID |
+| `VERCEL_PROJECT_ID` | Vercel project ID |
+| `RAILWAY_TOKEN` | Railway deployment token |
+
+## 6. Directory Structure Summary
 ```
 /
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml           # Build verification
+│   │   └── deploy.yml       # Auto-deployment
+│   └── PULL_REQUEST_TEMPLATE.md
 ├── components/
-│   ├── ui/              # Reusable UI components (Button, Card, Input, etc.)
-│   ├── views/           # Full-page views (HomeView, MapView, ReportView, etc.)
-│   ├── tutorial/        # Tutorial overlay components
-│   └── VerificationScreen.tsx  # Phone auth UI
-├── contexts/            # React Context Providers
-│   ├── AuthContext.tsx  # Authentication state management
-│   ├── ThemeContext.tsx # Theme (light/dark) management
-│   └── index.ts         # Barrel exports
-├── services/            # API service layer
-├── admin-panel/         # Separate Admin React App
-├── backend/             # Express.js API Server
-├── android/             # Android native project (Capacitor)
-├── ios/                 # iOS native project (Capacitor)
-├── App.tsx              # Main application component (~200 lines)
-├── index.tsx            # Entry point with providers
-├── i18n.ts              # Internationalization (en, mk, sq)
-├── types.ts             # TypeScript type definitions
-└── supabase.ts          # Supabase client configuration
+│   ├── ui/                  # Reusable UI components
+│   ├── views/               # Full-page views
+│   ├── tutorial/            # Tutorial overlay
+│   ├── ErrorBoundary.tsx    # Global error handler
+│   └── VerificationScreen.tsx
+├── contexts/
+│   ├── AuthContext.tsx
+│   ├── ThemeContext.tsx
+│   └── index.ts
+├── migrations/
+│   ├── add_multilingual_support.sql
+│   └── add_notifications_table.sql
+├── admin-panel/
+│   └── src/pages/
+│       ├── Dashboard.tsx
+│       ├── Reports.tsx
+│       ├── Content.tsx
+│       ├── Parking.tsx
+│       ├── Users.tsx
+│       └── Notifications.tsx
+├── backend/
+│   └── routes/
+│       ├── analyze.js
+│       ├── auth.js
+│       ├── events.js
+│       ├── holidays.js
+│       ├── landmarks.js
+│       ├── news.js
+│       ├── notifications.js
+│       ├── parking.js
+│       ├── reports.js
+│       └── translate.js
+├── android/                 # Capacitor Android
+├── ios/                     # Capacitor iOS
+├── App.tsx                  # Main app (~200 lines)
+├── index.tsx                # Entry point with ErrorBoundary
+├── i18n.ts                  # Translations (en, mk, sq)
+└── supabase.ts              # Supabase client
 ```
 
-## 6. Key Configuration Files
+## 7. Key Configuration Files
 | File | Purpose |
 |------|---------|
 | `capacitor.config.ts` | Capacitor mobile configuration |
@@ -154,3 +197,10 @@ npx tsc --noEmit     # Check TypeScript without emitting
 | `android/keystore.properties` | Release signing credentials |
 | `backend/.env` | Backend environment variables |
 | `i18n.ts` | Translation strings (en, mk, sq) |
+| `.github/workflows/ci.yml` | CI build verification |
+| `.github/workflows/deploy.yml` | Auto-deployment config |
+
+## 8. Database Migrations
+Run these in Supabase SQL Editor if not already applied:
+1. `migrations/add_multilingual_support.sql` - Multilingual fields for content
+2. `migrations/add_notifications_table.sql` - Push notifications history table

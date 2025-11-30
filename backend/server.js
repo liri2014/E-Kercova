@@ -30,6 +30,7 @@ const holidaysRoutes = require('./routes/holidays');
 const newsRoutes = require('./routes/news');
 const eventsRoutes = require('./routes/events');
 const landmarksRoutes = require('./routes/landmarks');
+const notificationsRoutes = require('./routes/notifications');
 
 // Let's export the supabase client for other files to use
 module.exports.supabase = supabase;
@@ -43,6 +44,7 @@ app.use('/api/holidays', holidaysRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/events', eventsRoutes);
 app.use('/api/landmarks', landmarksRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 // Health check endpoint for Railway keep-alive monitoring
 app.get('/health', (req, res) => {

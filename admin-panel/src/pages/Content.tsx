@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Calendar, Newspaper, Trash2, Edit2, Download } from 'lucide-react';
+import { Plus, Calendar, Newspaper, Trash2, Edit2, Download, Languages } from 'lucide-react';
 import { Modal } from '../components/Modal';
 import { api } from '../lib/api';
 
@@ -76,6 +76,7 @@ export const Content: React.FC = () => {
     const [uploading, setUploading] = useState(false);
     const [translating, setTranslating] = useState(false);
     const [importing, setImporting] = useState(false);
+    const [retranslating, setRetranslating] = useState(false);
 
     const fetchItems = async () => {
         setLoading(true);
@@ -359,6 +360,75 @@ export const Content: React.FC = () => {
             alert('Failed to import holidays');
         } finally {
             setImporting(false);
+        }
+    };
+
+    const handleRetranslate = async () => {
+        if (!selectedItem) return;
+        setRetranslating(true);
+
+        try {
+            const endpoint = activeTab === 'news' ? '/api/news' : activeTab === 'events' ? '/api/events' : '/api/landmarks';
+
+            // Get existing photo URLs for news/landmarks
+            let photoUrls: string[] = [];
+            let landmarkPhotoUrl = '';
+            if (activeTab === 'news') {
+                photoUrls = photoPreviewUrls.filter(url => !url.startsWith('data:'));
+            } else if (activeTab === 'landmarks') {
+                landmarkPhotoUrl = photoPreviewUrls.filter(url => !url.startsWith('data:'))[0] || '';
+            }
+
+            let payload: any;
+            if (activeTab === 'news') {
+                payload = {
+                    title: formData.title,
+                    description: formData.description,
+                    type: formData.type,
+                    sourceLang: formData.sourceLang,
+                    photo_urls: photoUrls,
+                    start_date: formData.start_date,
+                    end_date: formData.end_date || null
+                };
+            } else if (activeTab === 'events') {
+                payload = {
+                    title: formData.title,
+                    description: formData.description,
+                    date: formData.date,
+                    type: formData.type,
+                    sourceLang: formData.sourceLang
+                };
+            } else {
+                // landmarks
+                payload = {
+                    title: formData.title,
+                    description: formData.description,
+                    latitude: parseFloat(formData.latitude),
+                    longitude: parseFloat(formData.longitude),
+                    category: formData.category,
+                    sourceLang: formData.sourceLang,
+                    photo_url: landmarkPhotoUrl
+                };
+            }
+
+            // Delete old item and create new one with translations
+            await api.request(`${endpoint}/${selectedItem.id}`, { method: 'DELETE' });
+            await api.request(endpoint, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            setShowEditModal(false);
+            setSelectedItem(null);
+            setSelectedPhotos([]);
+            setPhotoPreviewUrls([]);
+            fetchItems();
+            alert('Content re-translated successfully!');
+        } catch (error) {
+            console.error('Error re-translating:', error);
+            alert(`Error: ${error}`);
+        } finally {
+            setRetranslating(false);
         }
     };
 
@@ -674,6 +744,22 @@ export const Content: React.FC = () => {
             {/* Edit Modal */}
             <Modal isOpen={showEditModal} onClose={() => { setShowEditModal(false); setSelectedItem(null); }} title={`Edit ${activeTab === 'news' ? 'News' : activeTab === 'events' ? 'Event' : 'Landmark'}`}>
                 <form onSubmit={handleEdit} className="space-y-4">
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-xs text-amber-700">
+                            <strong>Note:</strong> "Update" saves changes without re-translating. Use "Re-translate" to regenerate all language versions.
+                        </p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Source Language (for re-translation)</label>
+                        <select
+                            value={formData.sourceLang}
+                            onChange={(e) => setFormData({ ...formData, sourceLang: e.target.value })}
+                            className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                        >
+                            <option value="sq">Albanian</option>
+                            <option value="mk">Macedonian</option>
+                        </select>
+                    </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Title</label>
                         <input
@@ -832,13 +918,25 @@ export const Content: React.FC = () => {
                         </div>
                     )}
 
-                    <button
-                        type="submit"
-                        disabled={translating}
-                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
-                    >
-                        {translating ? 'Updating...' : 'Update'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            type="submit"
+                            disabled={translating || retranslating}
+                            className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+                        >
+                            {translating ? 'Updating...' : 'Update'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleRetranslate}
+                            disabled={translating || retranslating}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+                            title="Re-translate content to all languages"
+                        >
+                            <Languages size={18} />
+                            {retranslating ? 'Translating...' : 'Re-translate'}
+                        </button>
+                    </div>
                 </form>
             </Modal>
         </div >

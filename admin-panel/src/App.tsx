@@ -6,7 +6,9 @@ import { Login } from './pages/Login';
 import { Reports } from './pages/Reports';
 import { Content } from './pages/Content';
 import { Parking } from './pages/Parking';
-import { LayoutDashboard, FileText, Calendar, Car, LogOut } from 'lucide-react';
+import { Users } from './pages/Users';
+import { Notifications } from './pages/Notifications';
+import { LayoutDashboard, FileText, Calendar, Car, Users as UsersIcon, Bell, LogOut } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
     const { signOut } = useAuth();
@@ -25,6 +27,8 @@ const Sidebar: React.FC = () => {
                 <NavItem to="/reports" icon={<FileText size={20} />} label="Reports" />
                 <NavItem to="/content" icon={<Calendar size={20} />} label="News & Events" />
                 <NavItem to="/parking" icon={<Car size={20} />} label="Parking" />
+                <NavItem to="/users" icon={<UsersIcon size={20} />} label="Users" />
+                <NavItem to="/notifications" icon={<Bell size={20} />} label="Notifications" />
             </nav>
 
             <button onClick={signOut} className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all mt-auto">
@@ -59,6 +63,8 @@ function App() {
                     <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                     <Route path="/content" element={<ProtectedRoute><Content /></ProtectedRoute>} />
                     <Route path="/parking" element={<ProtectedRoute><Parking /></ProtectedRoute>} />
+                    <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+                    <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 </Routes>
             </BrowserRouter>
         </AuthProvider>
