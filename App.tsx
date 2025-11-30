@@ -8,6 +8,10 @@ import { LanguageSelectionScreen } from './components/LanguageSelectionScreen';
 import { Icon, Icons } from './components/ui';
 import { supabase } from './supabase';
 import { 
+    initializePushNotifications, 
+    setupPushNotificationListeners 
+} from './services/pushNotifications';
+import { 
     HomeView, 
     MapView, 
     ReportView, 
@@ -59,6 +63,31 @@ export const App: React.FC = () => {
 
         if (isVerified) {
             loadWalletBalance();
+        }
+    }, [isVerified]);
+
+    // Initialize push notifications when user is verified
+    useEffect(() => {
+        if (isVerified) {
+            // Initialize push notifications (request permission & save token)
+            initializePushNotifications();
+            
+            // Setup notification listeners
+            const cleanup = setupPushNotificationListeners(
+                (notification) => {
+                    // Handle notification received while app is in foreground
+                    console.log('Notification received:', notification.title);
+                },
+                (action) => {
+                    // Handle notification tap - navigate based on data
+                    const data = action.notification.data;
+                    if (data?.view) {
+                        setActiveView(data.view);
+                    }
+                }
+            );
+            
+            return cleanup;
         }
     }, [isVerified]);
 
