@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../supabaseClient');
-const axios = require('axios');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // GET /api/events - Get all events
 router.get('/', async (req, res) => {
@@ -125,14 +127,52 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// Helper function to translate text
+// Helper function to translate text using Gemini AI
 async function translateText(text, sourceLang) {
     try {
-        const response = await axios.post('http://localhost:3000/api/translate', {
-            text,
-            sourceLang
-        });
-        return response.data.translations;
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+        const langMap = {
+            sq: 'Albanian',
+            mk: 'Macedonian',
+            en: 'English'
+        };
+
+        const sourceLanguage = langMap[sourceLang];
+        const targetLanguages = ['sq', 'mk', 'en'].filter(lang => lang !== sourceLang);
+
+        const prompt = `You are a professional translator. Translate the following ${sourceLanguage} text into ${targetLanguages.map(l => langMap[l]).join(' and ')}.
+
+Source text (${sourceLanguage}):
+${text}
+
+Provide the translations in the following JSON format:
+{
+  "sq": "Albanian translation here",
+  "mk": "Macedonian translation here",
+  "en": "English translation here"
+}
+
+Important: 
+- Keep the same tone and style
+- Preserve any formatting
+- Return ONLY the JSON object, no additional text`;
+
+        const result = await model.generateContent(prompt);
+        const response = result.response.text();
+
+        // Extract JSON from response
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error('Failed to parse translation response');
+        }
+
+        const translations = JSON.parse(jsonMatch[0]);
+        
+        // Ensure source language is included
+        translations[sourceLang] = text;
+
+        return translations;
     } catch (error) {
         console.error('Translation error:', error);
         // Fallback: return same text for all languages
