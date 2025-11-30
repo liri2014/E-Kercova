@@ -4,53 +4,7 @@ import { Plus, Calendar, Newspaper, Trash2, Edit2, Download, Languages } from 'l
 import { Modal } from '../components/Modal';
 import { api } from '../lib/api';
 
-interface NewsItem {
-    id: string;
-    title: string;
-    description: string;
-    title_mk?: string;
-    title_sq?: string;
-    title_en?: string;
-    description_mk?: string;
-    description_sq?: string;
-    description_en?: string;
-    type: string;
-    start_date: string;
-    end_date?: string;
-    photo_urls?: string[];
-}
-
-interface EventItem {
-    id: string;
-    title: string;
-    title_mk?: string;
-    title_sq?: string;
-    title_en?: string;
-    description?: string;
-    description_mk?: string;
-    description_sq?: string;
-    description_en?: string;
-    date: string;
-    type: string;
-    is_holiday?: boolean;
-}
-
-interface LandmarkItem {
-    id: string;
-    title: string;
-    title_mk?: string;
-    title_sq?: string;
-    title_en?: string;
-    description: string;
-    description_mk?: string;
-    description_sq?: string;
-    description_en?: string;
-    latitude: number;
-    longitude: number;
-    photo_url?: string;
-    category: string;
-    created_at?: string;
-}
+// Content item types are inferred from Supabase responses
 
 export const Content: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'news' | 'events' | 'landmarks'>('news');
@@ -73,7 +27,7 @@ export const Content: React.FC = () => {
     });
     const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
     const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
-    const [uploading, setUploading] = useState(false);
+    const [_uploading, setUploading] = useState(false);
     const [translating, setTranslating] = useState(false);
     const [importing, setImporting] = useState(false);
     const [retranslating, setRetranslating] = useState(false);
@@ -136,7 +90,7 @@ export const Content: React.FC = () => {
 
         for (const photo of selectedPhotos) {
             const fileName = `news/${Date.now()}_${Math.random().toString(36).substring(7)}_${photo.name}`;
-            const { data, error } = await supabase.storage
+            const { error } = await supabase.storage
                 .from('app-uploads')
                 .upload(fileName, photo);
 
@@ -205,7 +159,7 @@ export const Content: React.FC = () => {
                 };
             }
 
-            const response = await api.request(endpoint, {
+            await api.request(endpoint, {
                 method: 'POST',
                 body: JSON.stringify(payload)
             });

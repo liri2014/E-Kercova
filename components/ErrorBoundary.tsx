@@ -12,14 +12,11 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-    constructor(props: Props) {
-        super(props);
-        this.state = {
-            hasError: false,
-            error: null,
-            errorInfo: null
-        };
-    }
+    public state: State = {
+        hasError: false,
+        error: null,
+        errorInfo: null
+    };
 
     static getDerivedStateFromError(error: Error): Partial<State> {
         return { hasError: true, error };
@@ -30,11 +27,6 @@ export class ErrorBoundary extends Component<Props, State> {
         
         // Log error to console in development
         console.error('ErrorBoundary caught an error:', error, errorInfo);
-        
-        // TODO: Send to error tracking service (e.g., Sentry)
-        // if (process.env.NODE_ENV === 'production') {
-        //     Sentry.captureException(error, { extra: errorInfo });
-        // }
     }
 
     handleRetry = (): void => {
@@ -82,7 +74,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         </p>
 
                         {/* Error Details (Development only) */}
-                        {process.env.NODE_ENV === 'development' && this.state.error && (
+                        {this.state.error && (
                             <div className="mb-6 p-4 bg-slate-100 dark:bg-slate-800 rounded-xl text-left overflow-auto max-h-40">
                                 <p className="text-xs font-mono text-red-600 dark:text-red-400">
                                     {this.state.error.toString()}
@@ -125,4 +117,3 @@ export class ErrorBoundary extends Component<Props, State> {
 }
 
 export default ErrorBoundary;
-

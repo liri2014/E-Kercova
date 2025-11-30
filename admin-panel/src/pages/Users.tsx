@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users as UsersIcon, Shield, ShieldCheck, Search, Phone, Calendar, FileText, Ban, CheckCircle } from 'lucide-react';
+import { Users as UsersIcon, Shield, ShieldCheck, Search, Phone, Calendar, FileText, CheckCircle } from 'lucide-react';
 import { Modal } from '../components/Modal';
 
 interface UserProfile {
