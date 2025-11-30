@@ -22,40 +22,29 @@ jobs:
           cache: 'npm'
           cache-dependency-path: admin-panel/package-lock.json
 
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-
       - name: Install dependencies
         working-directory: admin-panel
         run: npm ci
 
-      - name: Pull Vercel Environment
+      - name: Build admin panel
         working-directory: admin-panel
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: npm run build
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Build for Vercel
-        working-directory: admin-panel
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
       - name: Deploy to Vercel
-        working-directory: admin-panel
-        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: admin-panel
+          vercel-args: '--prod'
 
   # Note: Render.com auto-deploys from GitHub
   # No action needed - Render watches the main branch automatically
-  # Backend deploys to: https://e-kicevo-backend.onrender.com
 
   # Sync Capacitor for mobile builds
   mobile-sync:
@@ -79,7 +68,7 @@ jobs:
         run: npm run build
 
       - name: Sync Capacitor
-        run: npx cap sync --no-build
+        run: npx cap sync
 
       - name: Upload synced Android project
         uses: actions/upload-artifact@v4
