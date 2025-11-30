@@ -39,7 +39,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onViewChange, walletBalance 
         <div className="space-y-6 pb-6">
             {/* Greeting */}
             <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{greeting}, Citizen</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{greeting}, {t('citizen')}</h2>
                 <p className="text-sm sm:text-base text-slate-500">{t('how_can_we_help')}</p>
             </div>
 
@@ -62,7 +62,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onViewChange, walletBalance 
                 <ServiceCard id="home-service-parking" icon={Icons.parking} title={t('parking')} color="bg-indigo-500" onClick={() => onViewChange('parking')} />
                 <ServiceCard icon={Icons.calendarDays} title={t('events')} color="bg-orange-500" onClick={() => onViewChange('events')} />
                 <ServiceCard id="home-service-news" icon={Icons.news} title={t('news')} color="bg-emerald-500" onClick={() => onViewChange('news')} />
-                <ServiceCard icon={Icons.map} title="Explore Kicevo" color="bg-cyan-500" onClick={() => onViewChange('map')} />
+                <ServiceCard icon={Icons.map} title={t('explore_kicevo')} color="bg-cyan-500" onClick={() => onViewChange('map')} />
                 <ServiceCard icon={Icons.history} title={t('report_history')} color="bg-slate-500" onClick={() => onViewChange('history')} />
             </div>
 
@@ -74,7 +74,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onViewChange, walletBalance 
                         onClick={() => onViewChange('news')}
                         className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                     >
-                        View All
+                        {t('view_all')}
                     </button>
                 </div>
 

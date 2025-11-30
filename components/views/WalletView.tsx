@@ -35,15 +35,17 @@ export const saveTransaction = (transaction: Omit<Transaction, 'id' | 'timestamp
 };
 
 // Helper to format transaction date
-const formatTransactionDate = (timestamp: number): string => {
+const formatTransactionDate = (timestamp: number, t?: (key: string) => string): string => {
     const now = Date.now();
     const diff = now - timestamp;
     const oneDay = 24 * 60 * 60 * 1000;
+    const today = t ? t('today') : 'Today';
+    const yesterday = t ? t('yesterday') : 'Yesterday';
 
     if (diff < oneDay && new Date(timestamp).getDate() === new Date(now).getDate()) {
-        return `Today, ${new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+        return `${today}, ${new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
     } else if (diff < 2 * oneDay && new Date(timestamp).getDate() === new Date(now - oneDay).getDate()) {
-        return 'Yesterday';
+        return yesterday;
     } else {
         return new Date(timestamp).toLocaleDateString('en-US', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
     }
@@ -84,8 +86,8 @@ export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => 
         const amount = 500;
         setBalance(balance + amount);
         saveTransaction({
-            title: 'Wallet Top Up',
-            date: formatTransactionDate(Date.now()),
+            title: t('wallet_top_up'),
+            date: formatTransactionDate(Date.now(), t),
             amount: amount,
             type: 'topup'
         });
@@ -96,7 +98,7 @@ export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => 
     return (
         <div className="space-y-8 pb-24">
             {/* Header */}
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Wallet</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('wallet')}</h1>
 
             {/* Card */}
             <div className="relative h-56 rounded-[2rem] bg-gradient-to-br from-indigo-600 via-purple-600 to-purple-800 p-8 text-white shadow-2xl shadow-indigo-600/30 overflow-hidden transform transition-transform hover:scale-[1.02]">
@@ -118,7 +120,7 @@ export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => 
                     <div className="flex justify-between items-end">
                         <p className="font-mono text-lg tracking-widest opacity-80">**** **** **** 8829</p>
                         <div className="text-right">
-                            <p className="text-[10px] text-indigo-200 uppercase tracking-wider font-bold">Valid Thru</p>
+                            <p className="text-[10px] text-indigo-200 uppercase tracking-wider font-bold">{t('valid_thru')}</p>
                             <p className="font-mono text-sm font-medium">12/28</p>
                         </div>
                     </div>
@@ -138,17 +140,17 @@ export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => 
                     className="flex items-center justify-center gap-3 py-4 px-6 bg-[#1a1f37] dark:bg-slate-800 rounded-2xl text-slate-300 font-bold shadow-lg shadow-slate-900/10 active:scale-95 transition-all border border-slate-700/30 hover:bg-[#232946]"
                 >
                     <Icon path={Icons.history} size={20} strokeWidth={2.5} />
-                    <span>History</span>
+                    <span>{t('history')}</span>
                 </button>
             </div>
 
             {/* Recent Transactions */}
             <div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-5">Recent Transactions</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-5">{t('recent_transactions')}</h3>
                 <div className="space-y-3">
                     {transactions.length === 0 ? (
                         <div className="p-8 text-center text-slate-500 dark:text-slate-400">
-                            <p>No transactions yet</p>
+                            <p>{t('no_transactions')}</p>
                         </div>
                     ) : (
                         transactions.map(tx => (

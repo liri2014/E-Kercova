@@ -47,6 +47,12 @@ const translations = {
     report_history: 'Report History',
     map_view: 'Map View',
     content_coming_soon: 'Content coming soon',
+    citizen: 'Citizen',
+    explore_kicevo: 'Explore Kicevo',
+    wallet_top_up: 'Wallet Top Up',
+    history: 'History',
+    today: 'Today',
+    yesterday: 'Yesterday',
 
     // Settings
     settings: 'Settings',
@@ -241,6 +247,12 @@ const translations = {
     report_history: 'Историја на пријави',
     map_view: 'Карта',
     content_coming_soon: 'Содржината наскоро',
+    citizen: 'Граѓанин',
+    explore_kicevo: 'Истражи Кичево',
+    wallet_top_up: 'Полнење на паричник',
+    history: 'Историја',
+    today: 'Денес',
+    yesterday: 'Вчера',
 
     // Settings
     settings: 'Поставки',
@@ -449,6 +461,12 @@ const translations = {
     report_history: 'Historia e Raporteve',
     map_view: 'Harta',
     content_coming_soon: 'Përmbajtja së shpejti',
+    citizen: 'Qytetar',
+    explore_kicevo: 'Eksploro Kërçovën',
+    wallet_top_up: 'Mbushje e Portofolit',
+    history: 'Historia',
+    today: 'Sot',
+    yesterday: 'Dje',
 
     // Settings
     settings: 'Cilësimet',
