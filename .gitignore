@@ -32,11 +32,21 @@ admin-panel/.env
 # Capacitor
 /android/app/build
 /android/.gradle
+/android/build
 /ios/App/App/public
 /ios/App/Pods
+
+# Sensitive Files - DO NOT COMMIT
+android/keystore.properties
+android/*.keystore
+*.keystore
 
 # IDE
 .idea
 .vscode
 *.swp
 *.swo
+
+# Backup files
+*.backup
+*.bak

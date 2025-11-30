@@ -1,4 +1,5 @@
 // View Components barrel export
+export { HomeView } from './HomeView';
 export { MapView } from './MapView';
 export { ReportView } from './ReportView';
 export { ParkingView } from './ParkingView';
