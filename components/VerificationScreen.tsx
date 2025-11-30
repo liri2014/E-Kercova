@@ -8,6 +8,10 @@ export const VerificationScreen: React.FC = () => {
     const {
         phoneNumber,
         setPhoneNumber,
+        firstName,
+        setFirstName,
+        lastName,
+        setLastName,
         verificationCode,
         setVerificationCode,
         showVerificationInput,
@@ -29,12 +33,30 @@ export const VerificationScreen: React.FC = () => {
 
                 {!showVerificationInput ? (
                     <div className="space-y-4">
+                        {/* Name Fields */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <Input
+                                type="text"
+                                placeholder={t('first_name')}
+                                value={firstName}
+                                onChange={(e) => setFirstName(e.target.value)}
+                            />
+                            <Input
+                                type="text"
+                                placeholder={t('last_name')}
+                                value={lastName}
+                                onChange={(e) => setLastName(e.target.value)}
+                            />
+                        </div>
+                        
+                        {/* Phone Field */}
                         <Input
                             type="tel"
                             placeholder={t('phone_placeholder')}
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
                         />
+                        
                         <Button fullWidth onClick={handleSendCode}>
                             {t('send_code')}
                         </Button>
@@ -70,4 +92,3 @@ export const VerificationScreen: React.FC = () => {
         </div>
     );
 };
-

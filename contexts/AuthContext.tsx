@@ -6,6 +6,10 @@ interface AuthContextType {
     isVerified: boolean;
     phoneNumber: string;
     setPhoneNumber: (phone: string) => void;
+    firstName: string;
+    setFirstName: (name: string) => void;
+    lastName: string;
+    setLastName: (name: string) => void;
     verificationCode: string;
     setVerificationCode: (code: string) => void;
     showVerificationInput: boolean;
@@ -22,6 +26,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { t } = useTranslation();
     const [isVerified, setIsVerified] = useState(false);
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
     const [showVerificationInput, setShowVerificationInput] = useState(false);
     const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -33,6 +39,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     const handleSendCode = async () => {
+        // Validate name fields
+        if (!firstName.trim() || !lastName.trim()) {
+            setToast({ message: t('error_name_required'), type: 'error' });
+            return;
+        }
+
         if (phoneNumber.length < 8) {
             setToast({ message: t('error_phone_invalid'), type: 'error' });
             return;
@@ -60,7 +72,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const handleVerify = async () => {
         try {
             const formattedPhone = phoneNumber.startsWith('+') ? phoneNumber : `+389${phoneNumber}`;
-            const { error } = await supabase.auth.verifyOtp({
+            const { data, error } = await supabase.auth.verifyOtp({
                 phone: formattedPhone,
                 token: verificationCode,
                 type: 'sms'
@@ -70,7 +82,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setToast({ message: t('error_code_mismatch'), type: 'error' });
                 console.error('Verification error:', error);
             } else {
+                // Update profile with name
+                if (data.user) {
+                    const { error: updateError } = await supabase
+                        .from('profiles')
+                        .update({
+                            first_name: firstName.trim(),
+                            last_name: lastName.trim(),
+                            phone: formattedPhone
+                        })
+                        .eq('id', data.user.id);
+
+                    if (updateError) {
+                        console.error('Profile update error:', updateError);
+                    }
+                }
+
                 localStorage.setItem('isVerified', 'true');
+                localStorage.setItem('userName', `${firstName} ${lastName}`);
                 setIsVerified(true);
             }
         } catch (err) {
@@ -84,6 +113,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             isVerified,
             phoneNumber,
             setPhoneNumber,
+            firstName,
+            setFirstName,
+            lastName,
+            setLastName,
             verificationCode,
             setVerificationCode,
             showVerificationInput,
@@ -105,4 +138,3 @@ export const useAuth = () => {
     }
     return context;
 };
-

@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users as UsersIcon, Shield, ShieldCheck, Search, Phone, Calendar, FileText, CheckCircle } from 'lucide-react';
+import { Users as UsersIcon, Shield, ShieldCheck, Search, Phone, FileText, CheckCircle } from 'lucide-react';
 import { Modal } from '../components/Modal';
 
 interface UserProfile {
     id: string;
     phone: string | null;
+    first_name: string | null;
+    last_name: string | null;
     role: 'citizen' | 'admin';
+    points: number;
     updated_at: string;
+    created_at: string;
     reports_count?: number;
     transactions_count?: number;
 }
@@ -201,8 +205,8 @@ export const Users: React.FC = () => {
                                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">User</th>
                                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Role</th>
                                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Reports</th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Transactions</th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Last Updated</th>
+                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Points</th>
+                                    <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Joined</th>
                                     <th className="px-6 py-4 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
@@ -211,15 +215,21 @@ export const Users: React.FC = () => {
                                     <tr key={user.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                                                    <Phone size={18} />
+                                                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold">
+                                                    {user.first_name && user.last_name 
+                                                        ? `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
+                                                        : <Phone size={18} />
+                                                    }
                                                 </div>
                                                 <div>
                                                     <div className="text-sm font-medium text-slate-900">
-                                                        {user.phone || 'No phone'}
+                                                        {user.first_name && user.last_name 
+                                                            ? `${user.first_name} ${user.last_name}`
+                                                            : user.phone || 'Unknown User'
+                                                        }
                                                     </div>
-                                                    <div className="text-xs text-slate-400 font-mono">
-                                                        {user.id.slice(0, 8)}...
+                                                    <div className="text-xs text-slate-400">
+                                                        {user.phone || 'No phone'} • {user.points || 0} pts
                                                     </div>
                                                 </div>
                                             </div>
@@ -240,13 +250,12 @@ export const Users: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2 text-sm text-slate-600">
-                                                <Calendar size={16} className="text-slate-400" />
-                                                {user.transactions_count || 0}
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-amber-600">
+                                                ⭐ {user.points || 0}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                            {new Date(user.updated_at).toLocaleDateString()}
+                                            {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <button
@@ -274,8 +283,14 @@ export const Users: React.FC = () => {
                 <div className="space-y-4">
                     <div className="p-4 bg-slate-50 rounded-xl">
                         <p className="text-sm text-slate-500 mb-1">User</p>
-                        <p className="font-medium text-slate-900">{selectedUser?.phone || 'No phone'}</p>
-                        <p className="text-xs text-slate-400 font-mono mt-1">{selectedUser?.id}</p>
+                        <p className="font-medium text-slate-900">
+                            {selectedUser?.first_name && selectedUser?.last_name 
+                                ? `${selectedUser.first_name} ${selectedUser.last_name}`
+                                : 'Unknown User'
+                            }
+                        </p>
+                        <p className="text-xs text-slate-500 mt-1">{selectedUser?.phone || 'No phone'}</p>
+                        <p className="text-xs text-slate-400 font-mono">{selectedUser?.id?.slice(0, 16)}...</p>
                     </div>
 
                     <div className="p-4 bg-slate-50 rounded-xl">
