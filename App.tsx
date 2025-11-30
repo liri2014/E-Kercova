@@ -4,6 +4,7 @@ import { useTranslation } from './i18n';
 import { useAuth, useTheme } from './contexts';
 import { TutorialOverlay } from './components/tutorial';
 import { VerificationScreen } from './components/VerificationScreen';
+import { LanguageSelectionScreen } from './components/LanguageSelectionScreen';
 import { Icon, Icons } from './components/ui';
 import { 
     HomeView, 
@@ -19,7 +20,7 @@ import {
 
 // --- App Component ---
 export const App: React.FC = () => {
-    const { t, language, setLanguage } = useTranslation();
+    const { t, language, setLanguage, hasSelectedLanguage } = useTranslation();
     const { isVerified } = useAuth();
     const { theme, setTheme } = useTheme();
     
@@ -110,6 +111,11 @@ export const App: React.FC = () => {
             default: return <HomeView onViewChange={setActiveView} walletBalance={walletBalance} />;
         }
     };
+
+    // Show language selection if not selected yet
+    if (!hasSelectedLanguage) {
+        return <LanguageSelectionScreen onSelectLanguage={setLanguage} />;
+    }
 
     // Show verification screen if not verified
     if (!isVerified) {

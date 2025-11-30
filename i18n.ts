@@ -664,6 +664,8 @@ type TranslationKey = keyof typeof translations.en;
 interface LanguageContextType {
   language: Language;
   setLanguage: (language: Language) => void;
+  hasSelectedLanguage: boolean;
+  markLanguageSelected: () => void;
   t: (key: TranslationKey | string, params?: { [key: string]: string | number }) => string;
 }
 
@@ -675,9 +677,20 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return (storedLang && ['en', 'mk', 'sq'].includes(storedLang)) ? storedLang as Language : 'en';
   });
 
+  const [hasSelectedLanguage, setHasSelectedLanguage] = useState<boolean>(() => {
+    return localStorage.getItem('languageSelected') === 'true';
+  });
+
   const setLanguage = (lang: Language) => {
     localStorage.setItem('language', lang);
+    localStorage.setItem('languageSelected', 'true');
     setLanguageState(lang);
+    setHasSelectedLanguage(true);
+  };
+
+  const markLanguageSelected = () => {
+    localStorage.setItem('languageSelected', 'true');
+    setHasSelectedLanguage(true);
   };
 
   const t = (key: TranslationKey | string, params?: { [key: string]: string | number }) => {
@@ -690,7 +703,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return translation;
   };
 
-  return React.createElement(LanguageContext.Provider, { value: { language, setLanguage, t } }, children);
+  return React.createElement(LanguageContext.Provider, { value: { language, setLanguage, hasSelectedLanguage, markLanguageSelected, t } }, children);
 };
 
 export const useTranslation = () => {
