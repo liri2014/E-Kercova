@@ -376,18 +376,18 @@ const translations = {
 
 
     // Onboarding Tutorial
-    skip: 'Skip',
-    get_started: 'Get Started',
-    onboarding_welcome_title: 'Welcome to E-Kërçova',
-    onboarding_welcome_text: 'Your municipal services in one convenient place',
-    onboarding_report_title: 'Report Problems',
-    onboarding_report_text: 'Take a photo and report municipal issues instantly. Help make our city better!',
-    onboarding_parking_title: 'Quick Parking',
-    onboarding_parking_text: 'Pay for parking easily from your phone. No more searching for meters!',
-    onboarding_events_title: 'Stay Updated',
-    onboarding_events_text: 'Check events, news, and discover local attractions all in one place',
+    skip: 'Прескокни',
+    get_started: 'Започни',
+    onboarding_welcome_title: 'Добредојдовте во Е-Кичево',
+    onboarding_welcome_text: 'Вашите општински услуги на едно место',
+    onboarding_report_title: 'Пријави проблеми',
+    onboarding_report_text: 'Сликајте и пријавете општински проблеми моментално. Помогнете го нашиот град да биде подобар!',
+    onboarding_parking_title: 'Брзо паркирање',
+    onboarding_parking_text: 'Плаќајте за паркинг лесно од вашиот телефон. Нема повеќе барање паркомати!',
+    onboarding_events_title: 'Бидете информирани',
+    onboarding_events_text: 'Проверете настани, вести и откријте локални атракции на едно место',
     onboarding_done_title: "Подготвени сте!",
-    onboarding_done_text: 'Ready to explore all the features and make the most of our services',
+    onboarding_done_text: 'Подготвени сте да ги истражите сите функции и да ги искористите нашите услуги',
 
 
     // Tutorial
@@ -402,6 +402,7 @@ const translations = {
     get_directions: "Насоки до локација",
     report_details: "Детали за пријавата",
     no_photo: "Нема фотографија",
+    location_acquired: "Локација добиена",
     fetching_location: "Се добива локација...",
     please_wait_gps: "Ве молиме почекајте додека ги добиваме вашите GPS координати.",
   },
@@ -583,18 +584,18 @@ const translations = {
 
 
     // Onboarding Tutorial
-    skip: 'Skip',
-    get_started: 'Get Started',
-    onboarding_welcome_title: 'Welcome to E-Kërçova',
-    onboarding_welcome_text: 'Your municipal services in one convenient place',
-    onboarding_report_title: 'Report Problems',
-    onboarding_report_text: 'Take a photo and report municipal issues instantly. Help make our city better!',
-    onboarding_parking_title: 'Quick Parking',
-    onboarding_parking_text: 'Pay for parking easily from your phone. No more searching for meters!',
-    onboarding_events_title: 'Stay Updated',
-    onboarding_events_text: 'Check events, news, and discover local attractions all in one place',
+    skip: 'Anashkalo',
+    get_started: 'Fillo',
+    onboarding_welcome_title: 'Mirë se vini në E-Kërçova',
+    onboarding_welcome_text: 'Shërbimet tuaja komunale në një vend të përshtatshëm',
+    onboarding_report_title: 'Raporto Probleme',
+    onboarding_report_text: 'Bëni një foto dhe raportoni çështjet komunale menjëherë. Ndihmoni ta bëjmë qytetin tonë më të mirë!',
+    onboarding_parking_title: 'Parkim i Shpejtë',
+    onboarding_parking_text: 'Paguani për parking lehtësisht nga telefoni juaj. Nuk ka më kërkim për parkometra!',
+    onboarding_events_title: 'Qëndroni të Informuar',
+    onboarding_events_text: 'Kontrolloni ngjarjet, lajmet dhe zbuloni atraksionet lokale në një vend',
     onboarding_done_title: "Jeni Gati!",
-    onboarding_done_text: 'Ready to explore all the features and make the most of our services',
+    onboarding_done_text: 'Gati për të eksploruar të gjitha veçoritë dhe për të shfrytëzuar shërbimet tona',
 
 
     // Tutorial
@@ -609,7 +610,7 @@ const translations = {
     get_directions: "Merr Udhëzime",
     report_details: "Detajet e Raportit",
     no_photo: "Nuk ka Foto",
-    location_acquiring: "Po merret sinjali GPS...",
+    location_acquired: "Vendndodhja u mor",
     fetching_location: "Po merret vendndodhja...",
     please_wait_gps: "Ju lutemi prisni ndërsa merrni koordinatat tuaja GPS.",
   },

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from '../ui';
+import { useTranslation } from '../../i18n';
 
 export const PlaceholderView: React.FC<{ title: string, icon: string }> = ({ title, icon }) => {
     const { t } = useTranslation();
