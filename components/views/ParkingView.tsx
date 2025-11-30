@@ -49,14 +49,9 @@ export const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b
             setWalletBalance(walletBalance - totalCost);
 
             // Record transaction
-            const now = Date.now();
-            const formatTransactionDate = (timestamp: number): string => {
-                return `Today, ${new Date(timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-            };
-
             saveTransaction({
-                title: `Parking ${selectedZone.name}`,
-                date: formatTransactionDate(now),
+                titleKey: 'parking_payment',
+                details: selectedZone.name, // Zone name stored separately
                 amount: -totalCost,
                 type: 'parking'
             });

@@ -5,8 +5,8 @@ import { Icon, Icons } from '../ui';
 // Transaction type definition
 export interface Transaction {
     id: string;
-    title: string;
-    date: string;
+    titleKey: string; // Translation key instead of translated text
+    details?: string; // Additional details like zone name
     amount: number;
     type: 'parking' | 'topup';
     timestamp: number;
@@ -32,6 +32,18 @@ export const saveTransaction = (transaction: Omit<Transaction, 'id' | 'timestamp
     };
     transactions.unshift(newTransaction); // Add to beginning
     localStorage.setItem('walletTransactions', JSON.stringify(transactions.slice(0, 50))); // Keep last 50
+};
+
+// Helper to get translated title from transaction
+const getTransactionTitle = (tx: Transaction, t: (key: string) => string): string => {
+    // If titleKey exists, translate it
+    if (tx.titleKey) {
+        const title = t(tx.titleKey);
+        // Append details if present (e.g., zone name for parking)
+        return tx.details ? `${title} - ${tx.details}` : title;
+    }
+    // Legacy support: if old transactions have 'title' instead of 'titleKey'
+    return (tx as any).title || t('wallet_top_up');
 };
 
 // Helper to format transaction date
@@ -86,8 +98,7 @@ export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => 
         const amount = 500;
         setBalance(balance + amount);
         saveTransaction({
-            title: t('wallet_top_up'),
-            date: formatTransactionDate(Date.now(), t),
+            titleKey: 'wallet_top_up', // Save the key, not the translated text
             amount: amount,
             type: 'topup'
         });
@@ -160,8 +171,8 @@ export const WalletView: React.FC<{ balance: number, setBalance: (b: number) => 
                                         <Icon path={tx.type === 'topup' ? Icons.plus : Icons.parking} size={24} strokeWidth={2} />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-white text-base mb-0.5">{tx.title}</h4>
-                                        <p className="text-slate-400 text-xs font-medium">{tx.date}</p>
+                                        <h4 className="font-bold text-white text-base mb-0.5">{getTransactionTitle(tx, t)}</h4>
+                                        <p className="text-slate-400 text-xs font-medium">{formatTransactionDate(tx.timestamp, t)}</p>
                                     </div>
                                 </div>
                                 <span className={`font-bold text-base ${tx.amount > 0 ? 'text-emerald-500' : 'text-white'}`}>
