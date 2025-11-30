@@ -14,7 +14,9 @@ export const Reports: React.FC = () => {
             .select(`
                 *,
                 profiles:user_id (
-                    phone
+                    phone,
+                    first_name,
+                    last_name
                 )
             `)
             .order('created_at', { ascending: false });
@@ -113,10 +115,15 @@ export const Reports: React.FC = () => {
                                 <p className="text-slate-600 mb-4 line-clamp-2">{report.description}</p>
 
                                 <div className="flex items-center gap-6 text-sm text-slate-500">
-                                    {report.profiles?.phone && (
+                                    {report.profiles && (
                                         <div className="flex items-center gap-2 font-medium text-slate-700">
-                                            <span>📱</span>
-                                            <span>{report.profiles.phone}</span>
+                                            <span>👤</span>
+                                            <span>
+                                                {report.profiles.first_name && report.profiles.last_name 
+                                                    ? `${report.profiles.first_name} ${report.profiles.last_name}`
+                                                    : report.profiles.phone || 'Unknown'
+                                                }
+                                            </span>
                                         </div>
                                     )}
                                     <div className="flex items-center gap-2">

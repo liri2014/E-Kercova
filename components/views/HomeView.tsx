@@ -16,6 +16,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onViewChange, walletBalance 
     const hour = new Date().getHours();
     const greeting = hour < 12 ? t('good_morning') : hour < 18 ? t('good_afternoon') : t('good_evening');
     const [latestNews, setLatestNews] = useState<NewsItem | null>(null);
+    
+    // Get user's first name from localStorage (saved during verification)
+    const userName = localStorage.getItem('userName')?.split(' ')[0] || t('citizen');
 
     useEffect(() => {
         getNews().then(data => {
@@ -39,7 +42,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onViewChange, walletBalance 
         <div className="space-y-6 pb-6">
             {/* Greeting */}
             <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{greeting}, {t('citizen')}</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{greeting}, {userName}</h2>
                 <p className="text-sm sm:text-base text-slate-500">{t('how_can_we_help')}</p>
             </div>
 

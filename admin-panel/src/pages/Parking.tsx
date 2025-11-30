@@ -112,7 +112,7 @@ export const Parking: React.FC = () => {
             .select(`
                 *,
                 parking_zones:zone_id (name),
-                profiles:user_id (phone)
+                profiles:user_id (phone, first_name, last_name)
             `)
             .order('created_at', { ascending: false });
         if (error) console.error(error);
@@ -230,8 +230,13 @@ export const Parking: React.FC = () => {
                                     <tr key={transaction.id} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-sm font-medium text-slate-900">📱</span>
-                                                <span className="text-sm text-slate-700">{transaction.profiles?.phone || 'N/A'}</span>
+                                                <span className="text-sm font-medium text-slate-900">👤</span>
+                                                <span className="text-sm text-slate-700">
+                                                    {transaction.profiles?.first_name && transaction.profiles?.last_name 
+                                                        ? `${transaction.profiles.first_name} ${transaction.profiles.last_name}`
+                                                        : transaction.profiles?.phone || 'N/A'
+                                                    }
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">

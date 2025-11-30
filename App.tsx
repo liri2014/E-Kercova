@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { useTranslation } from './i18n';
 import { useAuth, useTheme } from './contexts';
@@ -6,6 +6,7 @@ import { TutorialOverlay } from './components/tutorial';
 import { VerificationScreen } from './components/VerificationScreen';
 import { LanguageSelectionScreen } from './components/LanguageSelectionScreen';
 import { Icon, Icons } from './components/ui';
+import { supabase } from './supabase';
 import { 
     HomeView, 
     MapView, 
@@ -25,7 +26,59 @@ export const App: React.FC = () => {
     const { theme, setTheme } = useTheme();
     
     const [activeView, setActiveView] = useState(() => localStorage.getItem('lastActiveView') || 'dashboard');
-    const [walletBalance, setWalletBalance] = useState(1250);
+    const [walletBalance, setWalletBalance] = useState(0);
+    const [balanceLoaded, setBalanceLoaded] = useState(false);
+
+    // Load wallet balance from Supabase
+    useEffect(() => {
+        const loadWalletBalance = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('wallet_balance')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    if (profile?.wallet_balance !== undefined) {
+                        setWalletBalance(profile.wallet_balance);
+                    } else {
+                        // Default balance for new users
+                        setWalletBalance(1000);
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading wallet balance:', err);
+                // Fallback to localStorage if Supabase fails
+                const stored = localStorage.getItem('walletBalance');
+                setWalletBalance(stored ? parseInt(stored) : 1000);
+            }
+            setBalanceLoaded(true);
+        };
+
+        if (isVerified) {
+            loadWalletBalance();
+        }
+    }, [isVerified]);
+
+    // Save wallet balance to Supabase and localStorage
+    const updateWalletBalance = useCallback(async (newBalance: number) => {
+        setWalletBalance(newBalance);
+        localStorage.setItem('walletBalance', newBalance.toString());
+        
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase
+                    .from('profiles')
+                    .update({ wallet_balance: newBalance, updated_at: new Date().toISOString() })
+                    .eq('id', user.id);
+            }
+        } catch (err) {
+            console.error('Error saving wallet balance:', err);
+        }
+    }, []);
 
     // Lifted photos state for camera restoration
     const [photos, setPhotos] = useState<string[]>(() => {
@@ -101,10 +154,10 @@ export const App: React.FC = () => {
         switch (activeView) {
             case 'dashboard': return <HomeView onViewChange={setActiveView} walletBalance={walletBalance} />;
             case 'report': return <ReportView onViewChange={setActiveView} photos={photos} setPhotos={setPhotos} />;
-            case 'parking': return <ParkingView walletBalance={walletBalance} setWalletBalance={setWalletBalance} />;
+            case 'parking': return <ParkingView walletBalance={walletBalance} setWalletBalance={updateWalletBalance} />;
             case 'events': return <EventsView />;
             case 'news': return <NewsView />;
-            case 'wallet': return <WalletView balance={walletBalance} setBalance={setWalletBalance} />;
+            case 'wallet': return <WalletView balance={walletBalance} setBalance={updateWalletBalance} />;
             case 'map': return <MapView />;
             case 'history': return <HistoryView />;
             case 'menu': return <MenuHub onViewChange={setActiveView} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
