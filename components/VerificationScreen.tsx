@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts';
 import { useTranslation } from '../i18n';
 import { Icon, Icons, Card, Button, Input, Toast } from './ui';
+import { LegalDocumentsModal, LegalConsentText } from './LegalDocuments';
 
 export const VerificationScreen: React.FC = () => {
     const { t } = useTranslation();
+    const [showLegalModal, setShowLegalModal] = useState(false);
+    const [initialDocument, setInitialDocument] = useState<'privacy' | 'terms'>('privacy');
     const {
         phoneNumber,
         setPhoneNumber,
@@ -21,6 +24,11 @@ export const VerificationScreen: React.FC = () => {
         toast,
         setToast
     } = useAuth();
+
+    const openLegalModal = (doc: 'privacy' | 'terms') => {
+        setInitialDocument(doc);
+        setShowLegalModal(true);
+    };
 
     return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
@@ -57,6 +65,12 @@ export const VerificationScreen: React.FC = () => {
                             onChange={(e) => setPhoneNumber(e.target.value)}
                         />
                         
+                        {/* Legal Consent */}
+                        <LegalConsentText 
+                            onPrivacyClick={() => openLegalModal('privacy')}
+                            onTermsClick={() => openLegalModal('terms')}
+                        />
+                        
                         <Button fullWidth onClick={handleSendCode}>
                             {t('send_code')}
                         </Button>
@@ -89,6 +103,13 @@ export const VerificationScreen: React.FC = () => {
                     onClose={() => setToast(null)}
                 />
             )}
+
+            {/* Legal Documents Modal */}
+            <LegalDocumentsModal
+                isOpen={showLegalModal}
+                onClose={() => setShowLegalModal(false)}
+                initialDocument={initialDocument}
+            />
         </div>
     );
 };

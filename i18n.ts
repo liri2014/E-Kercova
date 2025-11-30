@@ -220,6 +220,14 @@ const translations = {
     get_directions: "Get Directions",
     report_details: "Report Details",
     no_photo: "No Photo",
+
+    // Legal
+    privacy_policy: "Privacy Policy",
+    terms_of_service: "Terms of Service",
+    legal_consent: "By continuing, you agree to our",
+    and: "and",
+    about: "About",
+    legal: "Legal",
   },
   mk: {
     // Onboarding
@@ -438,6 +446,14 @@ const translations = {
     location_acquired: "Локација добиена",
     fetching_location: "Се добива локација...",
     please_wait_gps: "Ве молиме почекајте додека ги добиваме вашите GPS координати.",
+
+    // Legal
+    privacy_policy: "Политика за приватност",
+    terms_of_service: "Услови за користење",
+    legal_consent: "Со продолжување, се согласувате со нашата",
+    and: "и",
+    about: "За апликацијата",
+    legal: "Правни документи",
   },
   sq: {
     // Onboarding
@@ -656,6 +672,14 @@ const translations = {
     location_acquired: "Vendndodhja u mor",
     fetching_location: "Po merret vendndodhja...",
     please_wait_gps: "Ju lutemi prisni ndërsa merrni koordinatat tuaja GPS.",
+
+    // Legal
+    privacy_policy: "Politika e Privatësisë",
+    terms_of_service: "Kushtet e Shërbimit",
+    legal_consent: "Duke vazhduar, pranoni",
+    and: "dhe",
+    about: "Rreth Aplikacionit",
+    legal: "Dokumentet Ligjore",
   },
 };
 
