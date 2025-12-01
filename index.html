@@ -6,7 +6,72 @@
   <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Municipal Problem Reporter</title>
+  <title>E-Kicevo - Municipal Services App</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="E-Kicevo - Report city issues, pay for parking, stay updated with local news and events in Kicevo, North Macedonia" />
+  <meta name="keywords" content="Kicevo, municipality, parking, report, city services, North Macedonia" />
+  <meta name="author" content="E-Kicevo" />
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="E-Kicevo" />
+  <link rel="apple-touch-icon" href="/icons/icon-192.webp" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  
+  <!-- DNS Prefetch for faster external resource loading -->
+  <link rel="dns-prefetch" href="//e-kicevo-backend.onrender.com" />
+  <link rel="dns-prefetch" href="//unpkg.com" />
+  <link rel="dns-prefetch" href="//cdn.tailwindcss.com" />
+  
+  <!-- Preconnect for critical resources -->
+  <link rel="preconnect" href="https://e-kicevo-backend.onrender.com" crossorigin />
+  
+  <!-- Prevent white flash: detect theme immediately before anything renders -->
+  <script>
+    (function() {
+      var theme = localStorage.getItem('theme');
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Handle 'auto' theme setting
+      var shouldBeDark = theme === 'dark' || (theme === 'auto' && prefersDark) || (!theme && prefersDark);
+      if (shouldBeDark) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+  <style>
+    /* Set initial background to prevent flash */
+    html { background-color: #020617; }
+    html:not(.dark) { background-color: #f8fafc; }
+    
+    /* Critical CSS for initial render */
+    #root {
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    
+    /* Loading spinner for initial load */
+    .initial-loader {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(99, 102, 241, 0.2);
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+    
+    /* Hide loader when app is ready */
+    .app-loaded .initial-loader { display: none; }
+  </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -76,14 +141,80 @@
       padding-top: var(--sat);
       padding-bottom: var(--sab);
     }
+    
+    /* Performance: Optimize font rendering */
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+    
+    /* Optimize images globally */
+    img {
+      content-visibility: auto;
+    }
+    
+    /* Hide scrollbars but keep functionality */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    /* Prevent overscroll bounce on iOS/Android */
+    html, body {
+      overscroll-behavior: none;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+    
+    #root {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+    
+    /* Prevent pull-to-refresh */
+    body {
+      touch-action: pan-x pan-y;
+    }
   </style>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="/index.css">
 </head>
 
 <body class="bg-slate-50 dark:bg-slate-950 antialiased selection:bg-indigo-100 selection:text-indigo-700">
-  <div id="root"></div>
+  <div id="root">
+    <!-- Initial loading spinner shown until React mounts -->
+    <div class="initial-loader"></div>
+  </div>
   <script type="module" src="/index.tsx"></script>
+  <script>
+    // Mark app as loaded when React hydrates
+    window.addEventListener('DOMContentLoaded', function() {
+      // Give React a moment to mount
+      setTimeout(function() {
+        document.body.classList.add('app-loaded');
+      }, 100);
+    });
+    
+    // Performance: Report Web Vitals
+    if ('web-vital' in window || typeof PerformanceObserver !== 'undefined') {
+      try {
+        new PerformanceObserver(function(list) {
+          list.getEntries().forEach(function(entry) {
+            if (entry.entryType === 'largest-contentful-paint') {
+              console.log('LCP:', entry.startTime);
+            }
+          });
+        }).observe({ type: 'largest-contentful-paint', buffered: true });
+      } catch(e) {}
+    }
+  </script>
 </body>
 
 </html>

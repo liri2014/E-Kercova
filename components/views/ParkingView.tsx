@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ParkingZone } from '../../types';
 import { api } from '../../services/api';
 import { useTranslation } from '../../i18n';
@@ -7,6 +7,60 @@ import { Card, Button } from '../ui';
 import { saveTransaction } from './WalletView';
 
 const { getParkingZones, payParking: payForParking } = api;
+const API_URL = import.meta.env.VITE_API_URL || 'https://e-kicevo-backend.onrender.com';
+
+// License plate storage functions
+const SAVED_PLATES_KEY = 'ekicevo_saved_plates';
+const MAX_SAVED_PLATES = 5;
+
+const getSavedPlates = (): string[] => {
+    try {
+        const saved = localStorage.getItem(SAVED_PLATES_KEY);
+        return saved ? JSON.parse(saved) : [];
+    } catch {
+        return [];
+    }
+};
+
+const savePlate = (plate: string) => {
+    if (!plate || plate.length < 3) return;
+    
+    const plates = getSavedPlates();
+    // Remove if already exists (to move to front)
+    const filtered = plates.filter(p => p !== plate);
+    // Add to front
+    filtered.unshift(plate);
+    // Keep only MAX_SAVED_PLATES
+    const trimmed = filtered.slice(0, MAX_SAVED_PLATES);
+    localStorage.setItem(SAVED_PLATES_KEY, JSON.stringify(trimmed));
+};
+
+const removeSavedPlate = (plate: string) => {
+    const plates = getSavedPlates().filter(p => p !== plate);
+    localStorage.setItem(SAVED_PLATES_KEY, JSON.stringify(plates));
+};
+
+// Schedule a parking reminder notification
+const scheduleParkingReminder = async (userId: string, zoneName: string, plateNumber: string, hours: number) => {
+    try {
+        const endTime = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+        
+        await fetch(`${API_URL}/api/notifications/parking-reminder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user_id: userId,
+                parking_zone: zoneName,
+                end_time: endTime,
+                plate_number: plateNumber
+            })
+        });
+        
+        console.log('Parking reminder scheduled for:', endTime);
+    } catch (error) {
+        console.error('Failed to schedule parking reminder:', error);
+    }
+};
 
 export const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b: number) => void }> = ({ walletBalance, setWalletBalance }) => {
     const { t } = useTranslation();
@@ -15,13 +69,40 @@ export const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b
     const [hours, setHours] = useState(1);
     const [plate, setPlate] = useState('');
     const [loading, setLoading] = useState(false);
+    const [savedPlates, setSavedPlates] = useState<string[]>([]);
+    const [showPlateDropdown, setShowPlateDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         getParkingZones().then(data => {
             setZones(data);
             setSelectedZone(data[0]);
         });
+        // Load saved plates
+        setSavedPlates(getSavedPlates());
     }, []);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowPlateDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleSelectPlate = (selectedPlate: string) => {
+        setPlate(selectedPlate);
+        setShowPlateDropdown(false);
+    };
+
+    const handleRemovePlate = (e: React.MouseEvent, plateToRemove: string) => {
+        e.stopPropagation();
+        removeSavedPlate(plateToRemove);
+        setSavedPlates(getSavedPlates());
+    };
 
     const handlePay = async () => {
         if (!selectedZone || !plate) return alert(t('error_enter_plate'));
@@ -56,6 +137,13 @@ export const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b
                 type: 'parking'
             });
 
+            // Schedule parking reminder notification
+            await scheduleParkingReminder(user.id, selectedZone.name, plate, hours);
+            
+            // Save the license plate for future use
+            savePlate(plate);
+            setSavedPlates(getSavedPlates());
+            
             // Trigger local update
             window.dispatchEvent(new Event('transactionAdded'));
 
@@ -117,10 +205,10 @@ export const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b
                 </div>
             </div>
 
-            {/* License Plate Input */}
-            <div className="space-y-2">
+            {/* License Plate Input with Saved Plates */}
+            <div className="space-y-2" ref={dropdownRef}>
                 <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 z-10">
                         <div className="w-10 h-6 bg-blue-600 rounded flex items-center justify-center">
                             <span className="text-white text-[10px] font-bold">NMK</span>
                         </div>
@@ -130,8 +218,52 @@ export const ParkingView: React.FC<{ walletBalance: number, setWalletBalance: (b
                         placeholder="SK-1234-AB"
                         value={plate}
                         onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                        className="w-full h-14 pl-16 pr-4 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-slate-900 dark:text-white text-lg font-semibold uppercase tracking-wider"
+                        onFocus={() => savedPlates.length > 0 && setShowPlateDropdown(true)}
+                        className="w-full h-14 pl-16 pr-12 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-indigo-500/50 focus:outline-none text-slate-900 dark:text-white text-lg font-semibold uppercase tracking-wider"
                     />
+                    {/* Dropdown toggle button */}
+                    {savedPlates.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setShowPlateDropdown(!showPlateDropdown)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        >
+                            <svg className={`w-5 h-5 transition-transform ${showPlateDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                    )}
+                    
+                    {/* Saved plates dropdown */}
+                    {showPlateDropdown && savedPlates.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden z-20">
+                            <div className="p-2">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 px-3 py-1 mb-1">{t('recent_plates') || 'Recent plates'}</p>
+                                {savedPlates.map((savedPlate, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => handleSelectPlate(savedPlate)}
+                                        className="w-full flex items-center justify-between px-3 py-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors group"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-5 bg-blue-600 rounded flex items-center justify-center">
+                                                <span className="text-white text-[8px] font-bold">NMK</span>
+                                            </div>
+                                            <span className="text-slate-900 dark:text-white font-semibold tracking-wider">{savedPlate}</span>
+                                        </div>
+                                        <button
+                                            onClick={(e) => handleRemovePlate(e, savedPlate)}
+                                            className="p-1 text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { useTranslation } from './i18n';
 import { useAuth, useTheme } from './contexts';
@@ -11,6 +11,7 @@ import {
     initializePushNotifications, 
     setupPushNotificationListeners 
 } from './services/pushNotifications';
+// Lazy-loaded views for better performance
 import { 
     HomeView, 
     MapView, 
@@ -20,8 +21,13 @@ import {
     NewsView, 
     WalletView, 
     HistoryView, 
-    MenuHub 
-} from './components/views';
+    MenuHub,
+    CommunityView,
+    ServicesView,
+    SearchView
+} from './components/views/lazy';
+import { OfflineIndicator } from './components/OfflineIndicator';
+import { ViewLoadingFallback } from './components/LoadingSpinner';
 
 // --- App Component ---
 export const App: React.FC = () => {
@@ -189,6 +195,9 @@ export const App: React.FC = () => {
             case 'wallet': return <WalletView balance={walletBalance} setBalance={updateWalletBalance} />;
             case 'map': return <MapView />;
             case 'history': return <HistoryView />;
+            case 'community': return <CommunityView />;
+            case 'services': return <ServicesView />;
+            case 'search': return <SearchView onViewChange={setActiveView} />;
             case 'menu': return <MenuHub onViewChange={setActiveView} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
             default: return <HomeView onViewChange={setActiveView} walletBalance={walletBalance} />;
         }
@@ -205,7 +214,10 @@ export const App: React.FC = () => {
     }
 
     return (
-        <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 max-w-md mx-auto shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-slate-50 dark:bg-slate-950 max-w-md mx-auto shadow-2xl overflow-hidden">
+            {/* Offline Indicator */}
+            <OfflineIndicator />
+
             {/* Tutorial Overlay */}
             {showTutorial && (
                 <TutorialOverlay
@@ -225,15 +237,17 @@ export const App: React.FC = () => {
 
             {/* Scrollable Content */}
             <main
-                className="absolute left-0 right-0 overflow-y-auto no-scrollbar px-3 sm:px-4 md:px-6 py-4"
+                className="absolute inset-0 overflow-y-auto overflow-x-hidden overscroll-contain no-scrollbar px-3 sm:px-4 md:px-6"
                 style={{
-                    top: '0',
-                    paddingTop: 'calc(84px + env(safe-area-inset-top))',
-                    bottom: 'calc(80px + env(safe-area-inset-bottom))'
+                    top: 'calc(64px + env(safe-area-inset-top))',
+                    bottom: 'calc(80px + env(safe-area-inset-bottom))',
+                    WebkitOverflowScrolling: 'touch'
                 }}
             >
-                <div className="animate-fade-in">
-                    {renderContent()}
+                <div className="py-4 animate-fade-in">
+                    <Suspense fallback={<ViewLoadingFallback />}>
+                        {renderContent()}
+                    </Suspense>
                 </div>
             </main>
 

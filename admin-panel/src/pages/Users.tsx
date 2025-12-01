@@ -107,9 +107,15 @@ export const Users: React.FC = () => {
 
     // Filter users based on search and role filter
     const filteredUsers = users.filter(user => {
+        const query = searchQuery.toLowerCase();
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase();
+        
         const matchesSearch = searchQuery === '' ||
-            user.phone?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.id.toLowerCase().includes(searchQuery.toLowerCase());
+            user.phone?.toLowerCase().includes(query) ||
+            user.id.toLowerCase().includes(query) ||
+            user.first_name?.toLowerCase().includes(query) ||
+            user.last_name?.toLowerCase().includes(query) ||
+            fullName.includes(query);
 
         const matchesRole = roleFilter === 'all' || user.role === roleFilter;
 
@@ -165,7 +171,7 @@ export const Users: React.FC = () => {
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                         type="text"
-                        placeholder="Search by phone or ID..."
+                        placeholder="Search by name, phone, or ID..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"

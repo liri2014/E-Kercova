@@ -35,13 +35,21 @@ export const NewsView: React.FC = () => {
     };
 
     const getNewsTitle = (news: NewsItem) => {
-        const titleKey = `title_${language}` as 'title_en' | 'title_mk' | 'title_sq';
-        return news[titleKey] || news.title_en || news.title || '';
+        // Try language-specific first, then fallback chain
+        if (language === 'mk' && news.title_mk) return news.title_mk;
+        if (language === 'sq' && news.title_sq) return news.title_sq;
+        if (language === 'en' && news.title_en) return news.title_en;
+        // Fallback to any available translation
+        return news.title_en || news.title_mk || news.title_sq || news.title || '';
     };
 
     const getNewsDescription = (news: NewsItem) => {
-        const descKey = `description_${language}` as 'description_en' | 'description_mk' | 'description_sq';
-        return news[descKey] || news.description_en || news.description || '';
+        // Try language-specific first, then fallback chain
+        if (language === 'mk' && news.description_mk) return news.description_mk;
+        if (language === 'sq' && news.description_sq) return news.description_sq;
+        if (language === 'en' && news.description_en) return news.description_en;
+        // Fallback to any available translation
+        return news.description_en || news.description_mk || news.description_sq || news.description || '';
     };
 
     if (loading) {
@@ -66,6 +74,7 @@ export const NewsView: React.FC = () => {
                             onClick={() => {
                                 setSelectedNews(item);
                                 setCurrentPhotoIndex(0);
+                                setScrollY(0);
                             }}
                         >
                             {/* Photo thumbnail - Full Width */}
@@ -103,38 +112,37 @@ export const NewsView: React.FC = () => {
             {/* Full-screen News Viewer Modal */}
             {selectedNews && (
                 <div className="fixed inset-0 bg-black z-50 flex flex-col">
-                    {/* Header */}
+                    {/* Header - Fixed */}
                     <div
-                        className="flex items-center justify-between p-4 text-white bg-black/50 backdrop-blur-md z-10"
+                        className="flex items-center justify-between p-4 bg-black/80 backdrop-blur-sm z-20"
                         style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
                     >
-                        <span className="text-sm">{formatDate(selectedNews.start_date)}</span>
+                        <span className="text-sm text-white/70">{formatDate(selectedNews.start_date)}</span>
                         <button
-                            onClick={() => setSelectedNews(null)}
+                            onClick={() => { setSelectedNews(null); setScrollY(0); }}
                             className="p-2 hover:bg-white/10 rounded-full transition-colors"
                         >
-                            <Icon path={Icons.close} size={24} />
+                            <Icon path={Icons.close} size={24} className="text-white" />
                         </button>
                     </div>
 
                     {/* Scrollable Content */}
-                    <div
+                    <div 
                         className="flex-1 overflow-y-auto"
-                        onScroll={(e) => {
-                            const scrollTop = e.currentTarget.scrollTop;
-                            setScrollY(scrollTop);
-                        }}
+                        onScroll={(e) => setScrollY(e.currentTarget.scrollTop)}
                     >
-                        {/* Horizontal Scroll Photo Carousel - Shrinks on scroll */}
+                        {/* Photo Carousel - Shrinks on scroll */}
                         {selectedNews.photo_urls && selectedNews.photo_urls.length > 0 && (
-                            <div
-                                className="sticky top-0 z-0 transition-all duration-300 bg-black"
+                            <div 
+                                className="sticky top-0 z-10 bg-black overflow-hidden transition-all duration-100"
                                 style={{
-                                    height: `${Math.max(33, 50 - (scrollY / 10))}vh`
+                                    height: `${Math.max(0, 60 - (scrollY / 5))}vh`,
+                                    opacity: Math.max(0, 1 - (scrollY / 300))
                                 }}
                             >
-                                <div
-                                    className="h-full w-full overflow-x-auto snap-x snap-mandatory flex no-scrollbar bg-black"
+                                {/* Horizontal Scroll Container */}
+                                <div 
+                                    className="flex h-full overflow-x-auto snap-x snap-mandatory no-scrollbar"
                                     onScroll={(e) => {
                                         const container = e.currentTarget;
                                         const scrollLeft = container.scrollLeft;
@@ -144,43 +152,62 @@ export const NewsView: React.FC = () => {
                                     }}
                                 >
                                     {selectedNews.photo_urls.map((photoUrl, index) => (
-                                        <div
-                                            key={index}
+                                        <div 
+                                            key={index} 
                                             className="flex-shrink-0 w-full h-full snap-center flex items-center justify-center"
                                         >
                                             <img
                                                 src={photoUrl}
                                                 alt={`${getNewsTitle(selectedNews)} - Photo ${index + 1}`}
-                                                className="w-full h-full object-cover"
+                                                className="w-full h-full object-contain"
                                             />
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Photo dots indicator */}
+                                {/* Dots Indicator */}
                                 {selectedNews.photo_urls.length > 1 && (
-                                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
                                         {selectedNews.photo_urls.map((_, index) => (
                                             <div
                                                 key={index}
-                                                className={`h-2 rounded-full transition-all duration-300 ${index === currentPhotoIndex
-                                                    ? 'w-8 bg-white'
-                                                    : 'w-2 bg-white/40'
-                                                    }`}
+                                                className={`rounded-full transition-all duration-300 ${
+                                                    index === currentPhotoIndex
+                                                        ? 'w-2 h-2 bg-white'
+                                                        : 'w-1.5 h-1.5 bg-white/50'
+                                                }`}
                                             />
                                         ))}
+                                    </div>
+                                )}
+
+                                {/* Photo Counter */}
+                                {selectedNews.photo_urls.length > 1 && (
+                                    <div className="absolute top-3 right-3 bg-black/60 text-white px-2.5 py-1 rounded-full text-xs font-medium">
+                                        {currentPhotoIndex + 1} / {selectedNews.photo_urls.length}
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* Content - Scrolls under photo */}
-                        <div className="bg-white dark:bg-slate-900 min-h-[67vh] sm:min-h-[60vh] p-6 space-y-4 rounded-t-3xl -mt-6 relative z-1">
-                            <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold uppercase ${selectedNews.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
-                                {selectedNews.type}
-                            </span>
-                            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{getNewsTitle(selectedNews)}</h2>
-                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-base">{getNewsDescription(selectedNews)}</p>
+                        {/* Content - Scrolls over photo */}
+                        <div className="bg-white dark:bg-slate-900 min-h-screen rounded-t-3xl -mt-6 relative z-20 pt-6">
+                            {/* Type Badge */}
+                            <div className="px-4 pb-2">
+                                <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold uppercase ${selectedNews.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
+                                    {selectedNews.type}
+                                </span>
+                            </div>
+
+                            {/* Title */}
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white px-4 pb-4">
+                                {getNewsTitle(selectedNews)}
+                            </h2>
+
+                            {/* Description */}
+                            <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-base px-4 pb-20">
+                                {getNewsDescription(selectedNews)}
+                            </p>
                         </div>
                     </div>
                 </div>

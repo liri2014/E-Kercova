@@ -129,13 +129,20 @@ export const api = {
     },
 
     // --- AUTH (Delete Account via Backend) ---
-    deleteAccount: async (userId: string) => {
+    deleteAccount: async () => {
+        // Get the current session token
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session?.access_token) {
+            throw new Error('Not authenticated');
+        }
+
         const response = await fetch(`${API_URL}/api/auth/account`, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ user_id: userId }),
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
+            }
         });
         return handleResponse(response);
     }

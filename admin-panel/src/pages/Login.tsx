@@ -20,23 +20,18 @@ export const Login: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Attempting login with:", email);
     setLoading(true);
     setMessage('');
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    console.log("Supabase response:", { data, error });
-
     if (error) {
       setMessage('Error: ' + error.message);
-    } else {
-      console.log("Login successful, session:", data.session);
-      // AuthContext will detect the session change and redirect
     }
+    // AuthContext will detect the session change and redirect
     setLoading(false);
   };
 

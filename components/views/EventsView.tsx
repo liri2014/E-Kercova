@@ -1,15 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from '../../i18n';
 import { api } from '../../services/api';
-import { Icon, Icons, Card } from '../ui';
+import { Icon, Icons } from '../ui';
 
 const { getEvents } = api;
+
+const TYPE_LABELS: Record<string, { en: string; mk: string; sq: string; color: string }> = {
+    holiday: { en: 'National', mk: 'Национален', sq: 'Kombëtar', color: 'bg-amber-500' },
+    orthodox: { en: 'Orthodox', mk: 'Православен', sq: 'Ortodoks', color: 'bg-blue-500' },
+    catholic: { en: 'Catholic', mk: 'Католички', sq: 'Katolik', color: 'bg-purple-500' },
+    islamic: { en: 'Islamic', mk: 'Исламски', sq: 'Islamik', color: 'bg-emerald-500' },
+    municipal: { en: 'Municipal', mk: 'Општински', sq: 'Komunal', color: 'bg-indigo-500' },
+    cultural: { en: 'Cultural', mk: 'Културен', sq: 'Kulturor', color: 'bg-pink-500' },
+    sports: { en: 'Sports', mk: 'Спортски', sq: 'Sportiv', color: 'bg-orange-500' },
+};
 
 export const EventsView: React.FC = () => {
     const { t, language } = useTranslation();
     const [events, setEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
     useEffect(() => {
@@ -18,10 +27,8 @@ export const EventsView: React.FC = () => {
                 setLoading(true);
                 const data = await getEvents();
                 setEvents(data || []);
-                setError(null);
             } catch (err) {
                 console.error('Failed to fetch events:', err);
-                setError('Failed to load events');
                 setEvents([]);
             } finally {
                 setLoading(false);
@@ -56,19 +63,35 @@ export const EventsView: React.FC = () => {
         return event[titleKey] || event.title_en || event.title;
     };
 
-    const getEventDescription = (event: any) => {
-        const descKey = `description_${language}` as 'description_en' | 'description_mk' | 'description_sq';
-        return event[descKey] || event.description_en || event.description;
+    const getTypeLabel = (type: string) => {
+        const labels = TYPE_LABELS[type];
+        if (!labels) return type;
+        return labels[language as keyof typeof labels] || labels.en;
     };
 
-    // Get upcoming event (first future event)
-    const upcomingEvent = events.length > 0 ? events[0] : null; // Simplified for now, ideally sort by date > now
+    const getTypeColor = (type: string) => {
+        return TYPE_LABELS[type]?.color || 'bg-slate-500';
+    };
+
+    // Get real upcoming event (next event from today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcomingEvent = events
+        .filter(e => new Date(e.date) >= today)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] || null;
 
     // Get events for selected month
-    const monthEvents = events.filter(e => {
-        const eventDate = new Date(e.date);
-        return eventDate.getMonth() === selectedDate.getMonth() && eventDate.getFullYear() === selectedDate.getFullYear();
-    });
+    const monthEvents = events
+        .filter(e => {
+            const eventDate = new Date(e.date);
+            return eventDate.getMonth() === selectedDate.getMonth() && eventDate.getFullYear() === selectedDate.getFullYear();
+        })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Calculate days until upcoming event
+    const daysUntil = upcomingEvent 
+        ? Math.ceil((new Date(upcomingEvent.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
 
     if (loading) {
         return (
@@ -79,63 +102,78 @@ export const EventsView: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6 pb-24">
+        <div className="space-y-5 pb-24">
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <button className="p-2 rounded-full bg-slate-100 dark:bg-slate-800">
-                    <Icon path={Icons.chevronLeft} size={20} />
-                </button>
-                <h1 className="text-xl font-bold text-slate-900 dark:text-white">Events</h1>
-                <div className="w-10"></div> {/* Spacer for centering */}
-            </div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('events') || 'Events'}</h1>
 
-            {/* Upcoming Event Card */}
+            {/* Upcoming Event Card - Simpler Design */}
             {upcomingEvent && (
-                <div className="relative h-48 rounded-[2rem] overflow-hidden shadow-xl group cursor-pointer">
-                    <img
-                        src={upcomingEvent.photo_url || 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80'}
-                        alt="Event"
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent opacity-90"></div>
-                    <div className="absolute bottom-0 left-0 p-6 text-white w-full">
-                        <p className="text-indigo-300 font-medium text-sm mb-1 uppercase tracking-wider">Upcoming</p>
-                        <h2 className="text-2xl font-bold mb-1 leading-tight">{getEventTitle(upcomingEvent)}</h2>
-                        <p className="text-slate-300 text-sm flex items-center gap-1">
-                            <span className="opacity-80">{new Date(upcomingEvent.date).toLocaleDateString(language, { month: 'long', day: 'numeric' })}</span>
-                            <span className="mx-1">•</span>
-                            <span className="opacity-80">{upcomingEvent.location || 'City Square'}</span>
-                        </p>
+                <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-4 text-white">
+                    <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(upcomingEvent.type)} bg-opacity-80`}>
+                                    {getTypeLabel(upcomingEvent.type)}
+                                </span>
+                                <span className="text-indigo-200 text-xs">
+                                    {daysUntil === 0 ? t('today') || 'Today' : 
+                                     daysUntil === 1 ? t('tomorrow') || 'Tomorrow' : 
+                                     `${daysUntil} ${t('days_away') || 'days away'}`}
+                                </span>
+                            </div>
+                            <h2 className="text-lg font-bold mb-1">{getEventTitle(upcomingEvent)}</h2>
+                            <p className="text-indigo-200 text-sm">
+                                {new Date(upcomingEvent.date).toLocaleDateString(language === 'mk' ? 'mk-MK' : language === 'sq' ? 'sq-AL' : 'en-US', { 
+                                    weekday: 'long',
+                                    month: 'long', 
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                })}
+                            </p>
+                        </div>
+                        <div className="bg-white/20 rounded-xl p-3 text-center min-w-[60px]">
+                            <span className="text-2xl font-bold">{new Date(upcomingEvent.date).getDate()}</span>
+                            <p className="text-xs uppercase">{new Date(upcomingEvent.date).toLocaleDateString(language === 'mk' ? 'mk-MK' : 'en', { month: 'short' })}</p>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* Calendar Widget */}
-            <div className="bg-[#1a1f37] dark:bg-slate-900 rounded-[2rem] p-6 text-white shadow-lg">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold">
-                        {selectedDate.toLocaleDateString(language, { month: 'long', year: 'numeric' })}
+            {/* Calendar Widget - Cleaner Design */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-white">
+                        {selectedDate.toLocaleDateString(language === 'mk' ? 'mk-MK' : language === 'sq' ? 'sq-AL' : 'en-US', { month: 'long', year: 'numeric' })}
                     </h3>
-                    <div className="flex gap-2">
-                        <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))} className="p-1 hover:bg-white/10 rounded-full transition-colors">
-                            <Icon path={Icons.chevronLeft} size={20} />
+                    <div className="flex gap-1">
+                        <button 
+                            onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))} 
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        >
+                            <Icon path={Icons.chevronLeft} size={18} className="text-slate-600 dark:text-slate-400" />
                         </button>
-                        <button onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))} className="p-1 hover:bg-white/10 rounded-full transition-colors">
-                            <Icon path={Icons.chevronRight} size={20} />
+                        <button 
+                            onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))} 
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        >
+                            <Icon path={Icons.chevronRight} size={18} className="text-slate-600 dark:text-slate-400" />
                         </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-7 gap-y-4 text-center mb-2">
+                <div className="grid grid-cols-7 gap-1 text-center mb-2">
                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                        <span key={i} className="text-xs text-slate-400 font-medium">{d}</span>
+                        <span key={i} className="text-xs text-slate-400 font-medium py-1">{d}</span>
                     ))}
                 </div>
 
-                <div className="grid grid-cols-7 gap-y-2">
-                    {padding.map((_, i) => <div key={`pad-${i}`} />)}
+                <div className="grid grid-cols-7 gap-1">
+                    {padding.map((_, i) => <div key={`pad-${i}`} className="aspect-square" />)}
                     {dayList.map(day => {
                         const dayEvents = getEventsForDay(day);
+                        const isToday = new Date().getDate() === day && 
+                                        new Date().getMonth() === selectedDate.getMonth() && 
+                                        new Date().getFullYear() === selectedDate.getFullYear();
                         const isSelected = selectedDate.getDate() === day;
                         const hasEvents = dayEvents.length > 0;
 
@@ -143,13 +181,15 @@ export const EventsView: React.FC = () => {
                             <button
                                 key={day}
                                 onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), day))}
-                                className={`aspect-square flex flex-col items-center justify-center relative rounded-xl transition-all text-sm font-medium
-                                    ${isSelected ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'text-slate-300 hover:bg-white/5'}
+                                className={`aspect-square flex flex-col items-center justify-center relative rounded-lg transition-all text-sm
+                                    ${isSelected ? 'bg-indigo-600 text-white font-semibold' : 
+                                      isToday ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-semibold' :
+                                      'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'}
                                 `}
                             >
                                 {day}
-                                {hasEvents && !isSelected && (
-                                    <div className="w-1 h-1 rounded-full bg-indigo-400 mt-1"></div>
+                                {hasEvents && (
+                                    <div className={`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-indigo-500'}`}></div>
                                 )}
                             </button>
                         )
@@ -159,32 +199,48 @@ export const EventsView: React.FC = () => {
 
             {/* Events List */}
             <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
-                    Events for {selectedDate.toLocaleDateString(language, { month: 'long' })}
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-3">
+                    {t('events_for') || 'Events for'} {selectedDate.toLocaleDateString(language === 'mk' ? 'mk-MK' : language === 'sq' ? 'sq-AL' : 'en-US', { month: 'long', year: 'numeric' })}
                 </h3>
 
-                <div className="space-y-3">
+                <div className="space-y-2">
                     {monthEvents.length > 0 ? (
                         monthEvents.map((event, index) => {
                             const date = new Date(event.date);
+                            const isSelectedDay = date.getDate() === selectedDate.getDate();
                             return (
-                                <div key={index} className="flex items-center gap-4 p-4 bg-[#1a1f37] dark:bg-slate-900 rounded-[1.5rem] text-white shadow-sm">
-                                    <div className="flex-shrink-0 w-14 h-14 bg-indigo-500/10 rounded-2xl flex flex-col items-center justify-center text-indigo-400">
-                                        <span className="text-[10px] font-bold uppercase">{date.toLocaleDateString(language, { month: 'short' })}</span>
-                                        <span className="text-xl font-bold leading-none">{date.getDate()}</span>
+                                <div 
+                                    key={index} 
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+                                        isSelectedDay 
+                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800' 
+                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                                    }`}
+                                >
+                                    <div className="flex-shrink-0 w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-xl flex flex-col items-center justify-center">
+                                        <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase">
+                                            {date.toLocaleDateString(language === 'mk' ? 'mk-MK' : 'en', { month: 'short' })}
+                                        </span>
+                                        <span className="text-lg font-bold text-slate-900 dark:text-white leading-none">{date.getDate()}</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold text-base truncate">{getEventTitle(event)}</h4>
-                                        <p className="text-slate-400 text-xs">
-                                            {event.type === 'holiday' ? t('national_holiday') : t('municipality_event')} • {date.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
-                                        </p>
+                                        <h4 className="font-semibold text-slate-900 dark:text-white text-sm truncate">
+                                            {getEventTitle(event)}
+                                        </h4>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className={`w-2 h-2 rounded-full ${getTypeColor(event.type)}`}></span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                {getTypeLabel(event.type)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             );
                         })
                     ) : (
                         <div className="text-center py-8 text-slate-400">
-                            <p>{t('no_events_month')}</p>
+                            <Icon path={Icons.calendar} size={40} className="mx-auto mb-2 opacity-50" />
+                            <p>{t('no_events_month') || 'No events this month'}</p>
                         </div>
                     )}
                 </div>

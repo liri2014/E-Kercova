@@ -1,10 +1,21 @@
 import React from 'react';
 
-export const Icon: React.FC<{ path: string; className?: string; size?: number;[key: string]: any }> = ({ path, className = '', size = 24, ...props }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d={path} />
-    </svg>
-);
+interface IconProps {
+    path?: string;
+    name?: keyof typeof Icons;
+    className?: string;
+    size?: number;
+    [key: string]: unknown;
+}
+
+export const Icon: React.FC<IconProps> = ({ path, name, className = '', size = 24, ...props }) => {
+    const iconPath = path || (name ? Icons[name] : '');
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" {...props}>
+            <path d={iconPath} />
+        </svg>
+    );
+};
 
 export const Icons = {
     location: "M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z M12 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z",
@@ -43,5 +54,12 @@ export const Icons = {
     check: "M20 6L9 17l-5-5",
     info: "M12 16v-4M12 8h.01M22 12c0 5.523-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2s10 4.477 10 10z",
     shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
-    file: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 2v6h6M16 13H8M16 17H8M10 9H8"
+    file: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM14 2v6h6M16 13H8M16 17H8M10 9H8",
+    wifiOff: "M1 1l22 22M16.72 11.06c.02.02.04.04.06.06a10.02 10.02 0 00-5.01-1.87m-7.38-5.1a16 16 0 00-2.33 1.91M5 12.55a11 11 0 015.75-5.35M12 20l.01-.01M8.53 16.11a6 6 0 016.95 0M2 8.82a15.91 15.91 0 014.17-2.99M2 8.82a15.91 15.91 0 0118 0M8.5 16.5a6 6 0 017 0",
+    wifi: "M5 12.55a11 11 0 0114 0M8.53 16.11a6 6 0 016.95 0M12 20l.01-.01M2 8.82a15.91 15.91 0 0118 0",
+    refresh: "M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15",
+    users: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+    landmark: "M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2L2 8h20L12 2z",
+    search: "M21 21l-6-6m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0z",
+    autoMode: "M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41M12 6a6 6 0 0 0 0 12 6 6 0 0 0 0-12z"
 };

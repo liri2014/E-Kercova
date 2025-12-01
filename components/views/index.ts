@@ -9,3 +9,5 @@ export { WalletView } from './WalletView';
 export { PlaceholderView } from './PlaceholderView';
 export { HistoryView } from './HistoryView';
 export { MenuHub } from './MenuHub';
+export { CommunityView } from './CommunityView';
+export { ServicesView } from './ServicesView';

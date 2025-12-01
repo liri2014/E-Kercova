@@ -680,9 +680,13 @@ export const Content: React.FC = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <option value="municipal">Municipal</option>
-                                        <option value="cultural">Cultural</option>
-                                        <option value="sports">Sports</option>
+                                        <option value="municipal">Municipal Event</option>
+                                        <option value="cultural">Cultural Event</option>
+                                        <option value="sports">Sports Event</option>
+                                        <option value="holiday">National Holiday</option>
+                                        <option value="orthodox">Orthodox Holiday</option>
+                                        <option value="catholic">Catholic Holiday</option>
+                                        <option value="islamic">Islamic Holiday</option>
                                     </>
                                 )}
                             </select>
@@ -866,9 +870,13 @@ export const Content: React.FC = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <option value="municipal">Municipal</option>
-                                        <option value="cultural">Cultural</option>
-                                        <option value="sports">Sports</option>
+                                        <option value="municipal">Municipal Event</option>
+                                        <option value="cultural">Cultural Event</option>
+                                        <option value="sports">Sports Event</option>
+                                        <option value="holiday">National Holiday</option>
+                                        <option value="orthodox">Orthodox Holiday</option>
+                                        <option value="catholic">Catholic Holiday</option>
+                                        <option value="islamic">Islamic Holiday</option>
                                     </>
                                 )}
                             </select>

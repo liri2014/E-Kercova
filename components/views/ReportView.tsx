@@ -5,6 +5,7 @@ import { useTranslation } from '../../i18n';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { supabase } from '../../supabase';
 import { Icon, Icons, Button } from '../ui';
+import { PhotoAnnotator } from '../PhotoAnnotator';
 
 export const ReportView: React.FC<{ onViewChange: (view: string) => void, photos: string[], setPhotos: React.Dispatch<React.SetStateAction<string[]>> }> = ({ onViewChange, photos, setPhotos }) => {
     const { t } = useTranslation();
@@ -24,6 +25,7 @@ export const ReportView: React.FC<{ onViewChange: (view: string) => void, photos
     const [aiResult, setAiResult] = useState<{ title: string; category: ReportCategory } | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+    const [annotatingPhotoIndex, setAnnotatingPhotoIndex] = useState<number | null>(null);
 
     useEffect(() => {
         // Test Railway connectivity
@@ -78,6 +80,15 @@ export const ReportView: React.FC<{ onViewChange: (view: string) => void, photos
 
     const removePhoto = (index: number) => {
         setPhotos(photos.filter((_, i) => i !== index));
+    };
+
+    const handleAnnotationSave = (annotatedPhotoUrl: string) => {
+        if (annotatingPhotoIndex !== null) {
+            const newPhotos = [...photos];
+            newPhotos[annotatingPhotoIndex] = annotatedPhotoUrl;
+            setPhotos(newPhotos);
+            setAnnotatingPhotoIndex(null);
+        }
     };
 
     const handleSubmit = async () => {
@@ -157,6 +168,15 @@ export const ReportView: React.FC<{ onViewChange: (view: string) => void, photos
         <div className="space-y-6 pb-20">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('submit_new_report')}</h2>
 
+            {/* Photo Annotator */}
+            {annotatingPhotoIndex !== null && (
+                <PhotoAnnotator
+                    photoUrl={photos[annotatingPhotoIndex]}
+                    onSave={handleAnnotationSave}
+                    onCancel={() => setAnnotatingPhotoIndex(null)}
+                />
+            )}
+
             {/* Photo Upload */}
             <div className="space-y-4">
                 {photos.length > 0 ? (
@@ -164,11 +184,20 @@ export const ReportView: React.FC<{ onViewChange: (view: string) => void, photos
                         {photos.map((p, index) => (
                             <div key={index} className="relative flex-shrink-0 w-40 h-40 rounded-xl overflow-hidden group">
                                 <img src={p} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+                                {/* Edit/Annotate Button */}
+                                <button
+                                    onClick={() => setAnnotatingPhotoIndex(index)}
+                                    className="absolute top-2 left-2 bg-indigo-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    title="Annotate photo"
+                                >
+                                    <Icon path="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" size={14} />
+                                </button>
+                                {/* Remove Button */}
                                 <button
                                     onClick={() => removePhoto(index)}
-                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
-                                    <Icon path={Icons.x} size={16} />
+                                    <Icon path={Icons.x} size={14} />
                                 </button>
                             </div>
                         ))}

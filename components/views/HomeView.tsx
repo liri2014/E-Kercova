@@ -16,6 +16,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onViewChange, walletBalance 
     const hour = new Date().getHours();
     const greeting = hour < 12 ? t('good_morning') : hour < 18 ? t('good_afternoon') : t('good_evening');
     const [latestNews, setLatestNews] = useState<NewsItem | null>(null);
+    const [showUnavailableModal, setShowUnavailableModal] = useState(false);
     
     // Get user's first name from localStorage (saved during verification)
     const userName = localStorage.getItem('userName')?.split(' ')[0] || t('citizen');
@@ -65,9 +66,46 @@ export const HomeView: React.FC<HomeViewProps> = ({ onViewChange, walletBalance 
                 <ServiceCard id="home-service-parking" icon={Icons.parking} title={t('parking')} color="bg-indigo-500" onClick={() => onViewChange('parking')} />
                 <ServiceCard icon={Icons.calendarDays} title={t('events')} color="bg-orange-500" onClick={() => onViewChange('events')} />
                 <ServiceCard id="home-service-news" icon={Icons.news} title={t('news')} color="bg-emerald-500" onClick={() => onViewChange('news')} />
+                <ServiceCard icon={Icons.users} title={t('community')} color="bg-purple-500" onClick={() => onViewChange('community')} />
+                <ServiceCard 
+                    icon={Icons.landmark} 
+                    title={t('city_services')} 
+                    color="bg-slate-400" 
+                    onClick={() => setShowUnavailableModal(true)} 
+                    disabled={true}
+                    comingSoon={true}
+                />
                 <ServiceCard icon={Icons.map} title={t('explore_kicevo')} color="bg-cyan-500" onClick={() => onViewChange('map')} />
                 <ServiceCard icon={Icons.history} title={t('report_history')} color="bg-slate-500" onClick={() => onViewChange('history')} />
             </div>
+
+            {/* Feature Unavailable Modal */}
+            {showUnavailableModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowUnavailableModal(false)}>
+                    <div 
+                        className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="text-center">
+                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span className="text-3xl">🚧</span>
+                            </div>
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                                {t('feature_unavailable') || 'Feature Unavailable'}
+                            </h3>
+                            <p className="text-slate-500 dark:text-slate-400 mb-6">
+                                {t('feature_coming_soon') || 'This feature is currently unavailable and will be available soon.'}
+                            </p>
+                            <button
+                                onClick={() => setShowUnavailableModal(false)}
+                                className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+                            >
+                                {t('ok') || 'OK'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* News & Alerts Widget */}
             <div>
@@ -117,12 +155,37 @@ export const HomeView: React.FC<HomeViewProps> = ({ onViewChange, walletBalance 
 };
 
 // Service Card Component
-const ServiceCard: React.FC<{ icon: string; title: string; color: string; onClick: () => void; id?: string }> = ({ icon, title, color, onClick, id }) => (
-    <button id={id} onClick={onClick} className="bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border-none flex flex-col items-start gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all text-left group">
-        <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20`}>
+const ServiceCard: React.FC<{ 
+    icon: string; 
+    title: string; 
+    color: string; 
+    onClick: () => void; 
+    id?: string;
+    disabled?: boolean;
+    comingSoon?: boolean;
+}> = ({ icon, title, color, onClick, id, disabled, comingSoon }) => (
+    <button 
+        id={id} 
+        onClick={onClick} 
+        className={`bg-white dark:bg-slate-900 p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none border-none flex flex-col items-start gap-3 transition-all text-left group relative ${
+            disabled 
+                ? 'opacity-60 cursor-pointer' 
+                : 'hover:scale-[1.02] active:scale-[0.98]'
+        }`}
+    >
+        {comingSoon && (
+            <span className="absolute top-2 right-2 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 text-[10px] font-bold uppercase rounded-full">
+                Soon
+            </span>
+        )}
+        <div className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center text-white shadow-lg ${disabled ? 'shadow-slate-300/20' : 'shadow-indigo-500/20'}`}>
             <Icon path={icon} size={24} />
         </div>
-        <span className="font-bold text-slate-900 dark:text-white text-sm leading-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{title}</span>
+        <span className={`font-bold text-sm leading-tight transition-colors ${
+            disabled 
+                ? 'text-slate-400 dark:text-slate-500' 
+                : 'text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+        }`}>{title}</span>
     </button>
 );
 

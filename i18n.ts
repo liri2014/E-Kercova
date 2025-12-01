@@ -45,6 +45,9 @@ const translations = {
     events: 'Events',
     news: 'News & Alerts',
     view_all: 'View All',
+    feature_unavailable: 'Feature Unavailable',
+    feature_coming_soon: 'This feature is currently unavailable and will be available soon.',
+    ok: 'OK',
     wallet: 'Wallet',
     balance: 'Balance',
     report_history: 'Report History',
@@ -85,6 +88,7 @@ const translations = {
     pay_for_parking: 'Pay for Parking',
     license_plate: 'License Plate',
     plate_placeholder: 'SK-1234-AB',
+    recent_plates: 'Recent plates',
     pay_for_hour: 'Pay for 1 Hour',
     per_hour: 'MKD/hr',
     recent_transactions: 'Recent Transactions',
@@ -228,6 +232,34 @@ const translations = {
     and: "and",
     about: "About",
     legal: "Legal",
+
+    // Community & Services
+    community: "Community",
+    community_reports: "Community Reports",
+    view_reports_nearby: "View reports nearby",
+    city_services: "City Services",
+    bills_documents: "Bills & documents",
+    my_reports: "My Reports",
+    city_map: "City Map",
+    app_settings: "App Settings",
+    no_events_month: "No events this month",
+    no_reports_found: "No reports found in your area",
+    upvotes: "upvotes",
+
+    // Search
+    search: "Search",
+    search_placeholder: "Search news, events, reports...",
+    no_results: "No results found",
+    try_different_search: "Try a different search term",
+    start_searching: "Start typing to search",
+    all: "All",
+    report: "Report",
+
+    // Theme
+    light: "Light",
+    dark: "Dark",
+    auto: "Auto",
+    theme: "Theme",
   },
   mk: {
     // Onboarding
@@ -270,6 +302,9 @@ const translations = {
     events: 'Настани',
     news: 'Вести и известувања',
     view_all: 'Види ги сите',
+    feature_unavailable: 'Функцијата не е достапна',
+    feature_coming_soon: 'Оваа функција моментално не е достапна и наскоро ќе биде достапна.',
+    ok: 'Во ред',
     wallet: 'Паричник',
     balance: 'Салдо',
     report_history: 'Историја на пријави',
@@ -310,6 +345,7 @@ const translations = {
     pay_for_parking: 'Плати за паркинг',
     license_plate: 'Регистарска табличка',
     plate_placeholder: 'СК-1234-АБ',
+    recent_plates: 'Последни таблички',
     pay_for_hour: 'Плати за 1 час',
     per_hour: 'МКД/час',
     recent_transactions: 'Скорешни трансакции',
@@ -454,6 +490,34 @@ const translations = {
     and: "и",
     about: "За апликацијата",
     legal: "Правни документи",
+
+    // Community & Services
+    community: "Заедница",
+    community_reports: "Пријави од заедницата",
+    view_reports_nearby: "Погледни пријави во близина",
+    city_services: "Градски услуги",
+    bills_documents: "Сметки и документи",
+    my_reports: "Мои пријави",
+    city_map: "Градска карта",
+    app_settings: "Поставки на апликацијата",
+    no_events_month: "Нема настани овој месец",
+    no_reports_found: "Не се пронајдени пријави во вашата област",
+    upvotes: "гласови",
+
+    // Search
+    search: "Пребарај",
+    search_placeholder: "Пребарај вести, настани, пријави...",
+    no_results: "Нема резултати",
+    try_different_search: "Обидете се со друг поим за пребарување",
+    start_searching: "Почнете да пишувате за да пребарувате",
+    all: "Сите",
+    report: "Пријава",
+
+    // Theme
+    light: "Светло",
+    dark: "Темно",
+    auto: "Автоматски",
+    theme: "Тема",
   },
   sq: {
     // Onboarding
@@ -496,6 +560,9 @@ const translations = {
     events: 'Ngjarjet',
     news: 'Lajme & Njoftime',
     view_all: 'Shiko të gjitha',
+    feature_unavailable: 'Funksioni i padisponueshëm',
+    feature_coming_soon: 'Ky funksion aktualisht nuk është i disponueshëm dhe do të jetë i disponueshëm së shpejti.',
+    ok: 'OK',
     wallet: 'Portofoli',
     balance: 'Balansi',
     report_history: 'Historia e Raporteve',
@@ -536,6 +603,7 @@ const translations = {
     pay_for_parking: 'Paguaj për Parking',
     license_plate: 'Targa e Mjetit',
     plate_placeholder: 'SK-1234-AB',
+    recent_plates: 'Targat e fundit',
     pay_for_hour: 'Paguaj për 1 Orë',
     per_hour: 'MKD/orë',
     recent_transactions: 'Transaksionet e Fundit',
@@ -680,6 +748,34 @@ const translations = {
     and: "dhe",
     about: "Rreth Aplikacionit",
     legal: "Dokumentet Ligjore",
+
+    // Community & Services
+    community: "Komuniteti",
+    community_reports: "Raportet e Komunitetit",
+    view_reports_nearby: "Shiko raportet afër",
+    city_services: "Shërbimet e Qytetit",
+    bills_documents: "Faturat dhe dokumentet",
+    my_reports: "Raportet e mia",
+    city_map: "Harta e qytetit",
+    app_settings: "Cilësimet e aplikacionit",
+    no_events_month: "Nuk ka ngjarje këtë muaj",
+    no_reports_found: "Nuk u gjetën raporte në zonën tuaj",
+    upvotes: "vota",
+
+    // Search
+    search: "Kërko",
+    search_placeholder: "Kërko lajme, ngjarje, raporte...",
+    no_results: "Nuk u gjetën rezultate",
+    try_different_search: "Provoni një term tjetër kërkimi",
+    start_searching: "Filloni të shkruani për të kërkuar",
+    all: "Të gjitha",
+    report: "Raport",
+
+    // Theme
+    light: "E ndritshme",
+    dark: "E errët",
+    auto: "Automatike",
+    theme: "Tema",
   },
 };
 
