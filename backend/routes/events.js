@@ -129,30 +129,24 @@ router.delete('/:id', async (req, res) => {
 
 // Helper function to translate text using MyMemory free API
 async function translateText(text, sourceLang) {
+    const axios = require('axios');
+    
     try {
-        const langCodes = {
-            sq: 'sq',
-            mk: 'mk',
-            en: 'en'
-        };
-
         const translations = { [sourceLang]: text };
         const targetLangs = ['sq', 'mk', 'en'].filter(lang => lang !== sourceLang);
 
         for (const targetLang of targetLangs) {
             try {
-                const response = await fetch(
-                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langCodes[sourceLang]}|${langCodes[targetLang]}`
-                );
-                const data = await response.json();
+                const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${targetLang}`;
+                const response = await axios.get(url);
                 
-                if (data.responseStatus === 200 && data.responseData?.translatedText) {
-                    translations[targetLang] = data.responseData.translatedText;
+                if (response.data && response.data.responseStatus === 200 && response.data.responseData?.translatedText) {
+                    translations[targetLang] = response.data.responseData.translatedText;
                 } else {
                     translations[targetLang] = text;
                 }
             } catch (err) {
-                console.error(`Translation to ${targetLang} failed:`, err);
+                console.error(`Translation to ${targetLang} failed:`, err.message);
                 translations[targetLang] = text;
             }
         }
