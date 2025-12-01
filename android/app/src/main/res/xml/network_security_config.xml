@@ -1,19 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <base-config cleartextTrafficPermitted="true">
+    <!-- Production: Only allow HTTPS -->
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
-            <certificates src="user" />
         </trust-anchors>
     </base-config>
+    
+    <!-- Allow localhost for Capacitor WebView -->
     <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">e-kercova-production.up.railway.app</domain>
-        <domain includeSubdomains="true">railway.app</domain>
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">10.0.2.2</domain>
-        <trust-anchors>
-            <certificates src="system" />
-            <certificates src="user" />
-        </trust-anchors>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
     </domain-config>
 </network-security-config>
