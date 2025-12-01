@@ -127,55 +127,39 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// Helper function to translate text using Gemini AI
+// Helper function to translate text using MyMemory free API
 async function translateText(text, sourceLang) {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
-
-        const langMap = {
-            sq: 'Albanian',
-            mk: 'Macedonian',
-            en: 'English'
+        const langCodes = {
+            sq: 'sq',
+            mk: 'mk',
+            en: 'en'
         };
 
-        const sourceLanguage = langMap[sourceLang];
-        const targetLanguages = ['sq', 'mk', 'en'].filter(lang => lang !== sourceLang);
+        const translations = { [sourceLang]: text };
+        const targetLangs = ['sq', 'mk', 'en'].filter(lang => lang !== sourceLang);
 
-        const prompt = `You are a professional translator. Translate the following ${sourceLanguage} text into ${targetLanguages.map(l => langMap[l]).join(' and ')}.
-
-Source text (${sourceLanguage}):
-${text}
-
-Provide the translations in the following JSON format:
-{
-  "sq": "Albanian translation here",
-  "mk": "Macedonian translation here",
-  "en": "English translation here"
-}
-
-Important: 
-- Keep the same tone and style
-- Preserve any formatting
-- Return ONLY the JSON object, no additional text`;
-
-        const result = await model.generateContent(prompt);
-        const response = result.response.text();
-
-        // Extract JSON from response
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error('Failed to parse translation response');
+        for (const targetLang of targetLangs) {
+            try {
+                const response = await fetch(
+                    `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langCodes[sourceLang]}|${langCodes[targetLang]}`
+                );
+                const data = await response.json();
+                
+                if (data.responseStatus === 200 && data.responseData?.translatedText) {
+                    translations[targetLang] = data.responseData.translatedText;
+                } else {
+                    translations[targetLang] = text;
+                }
+            } catch (err) {
+                console.error(`Translation to ${targetLang} failed:`, err);
+                translations[targetLang] = text;
+            }
         }
-
-        const translations = JSON.parse(jsonMatch[0]);
-        
-        // Ensure source language is included
-        translations[sourceLang] = text;
 
         return translations;
     } catch (error) {
         console.error('Translation error:', error);
-        // Fallback: return same text for all languages
         return { mk: text, sq: text, en: text };
     }
 }
