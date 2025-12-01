@@ -134,7 +134,7 @@ router.delete('/:id', async (req, res) => {
 // Helper function to translate text using Gemini AI
 async function translateText(text, sourceLang) {
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
 
         const langMap = {
             sq: 'Albanian',

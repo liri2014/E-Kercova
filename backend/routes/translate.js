@@ -14,7 +14,7 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Missing text or sourceLang' });
         }
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
 
         const langMap = {
             sq: 'Albanian',
