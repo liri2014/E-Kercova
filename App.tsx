@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
 import { useTranslation } from './i18n';
 import { useAuth, useTheme } from './contexts';
@@ -11,23 +11,19 @@ import {
     initializePushNotifications, 
     setupPushNotificationListeners 
 } from './services/pushNotifications';
-// Lazy-loaded views for better performance
-import { 
-    HomeView, 
-    MapView, 
-    ReportView, 
-    ParkingView, 
-    EventsView, 
-    NewsView, 
-    WalletView, 
-    HistoryView, 
-    MenuHub,
-    CommunityView,
-    ServicesView,
-    SearchView
-} from './components/views/lazy';
+// Direct imports for instant loading
+import { HomeView } from './components/views/HomeView';
+import { MapView } from './components/views/MapView';
+import { ReportView } from './components/views/ReportView';
+import { ParkingView } from './components/views/ParkingView';
+import { EventsView } from './components/views/EventsView';
+import { NewsView } from './components/views/NewsView';
+import { WalletView } from './components/views/WalletView';
+import { HistoryView } from './components/views/HistoryView';
+import { MenuHub } from './components/views/MenuHub';
+import { CommunityView } from './components/views/CommunityView';
+import { ServicesView } from './components/views/ServicesView';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { ViewLoadingFallback } from './components/LoadingSpinner';
 
 // --- App Component ---
 export const App: React.FC = () => {
@@ -197,7 +193,6 @@ export const App: React.FC = () => {
             case 'history': return <HistoryView />;
             case 'community': return <CommunityView />;
             case 'services': return <ServicesView />;
-            case 'search': return <SearchView onViewChange={setActiveView} />;
             case 'menu': return <MenuHub onViewChange={setActiveView} theme={theme} setTheme={setTheme} language={language} setLanguage={setLanguage} />;
             default: return <HomeView onViewChange={setActiveView} walletBalance={walletBalance} />;
         }
@@ -244,10 +239,8 @@ export const App: React.FC = () => {
                     WebkitOverflowScrolling: 'touch'
                 }}
             >
-                <div className="py-4 animate-fade-in">
-                    <Suspense fallback={<ViewLoadingFallback />}>
-                        {renderContent()}
-                    </Suspense>
+                <div className="py-4">
+                    {renderContent()}
                 </div>
             </main>
 

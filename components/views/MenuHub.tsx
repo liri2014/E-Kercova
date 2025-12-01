@@ -48,15 +48,6 @@ export const MenuHub: React.FC<{
         <div className="space-y-6">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('settings')}</h2>
 
-            {/* Search Bar */}
-            <button
-                onClick={() => onViewChange('search')}
-                className="w-full flex items-center gap-3 p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl text-left"
-            >
-                <Icon path={Icons.search} size={20} className="text-slate-400" />
-                <span className="text-slate-500 dark:text-slate-400">{t('search_placeholder') || 'Search news, events, reports...'}</span>
-            </button>
-
             {/* More Links */}
             <Card className="divide-y divide-slate-100 dark:divide-slate-800 p-0 overflow-hidden">
                 <button

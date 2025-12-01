@@ -128,16 +128,25 @@ export const NewsView: React.FC = () => {
 
                     {/* Scrollable Content */}
                     <div 
-                        className="flex-1 overflow-y-auto"
-                        onScroll={(e) => setScrollY(e.currentTarget.scrollTop)}
+                        className="flex-1 overflow-y-auto overscroll-contain"
+                        onScroll={(e) => {
+                            // Use requestAnimationFrame for smoother updates
+                            requestAnimationFrame(() => {
+                                setScrollY(e.currentTarget.scrollTop);
+                            });
+                        }}
                     >
-                        {/* Photo Carousel - Shrinks on scroll */}
+                        {/* Photo Carousel - Fixed height, fades on scroll */}
                         {selectedNews.photo_urls && selectedNews.photo_urls.length > 0 && (
                             <div 
-                                className="sticky top-0 z-10 bg-black overflow-hidden transition-all duration-100"
+                                className="relative bg-black overflow-hidden"
                                 style={{
-                                    height: `${Math.max(0, 60 - (scrollY / 5))}vh`,
-                                    opacity: Math.max(0, 1 - (scrollY / 300))
+                                    height: '50vh',
+                                    opacity: Math.max(0, 1 - (scrollY / 250)),
+                                    transform: `scale(${Math.max(0.9, 1 - (scrollY / 1000))})`,
+                                    transformOrigin: 'top center',
+                                    willChange: 'opacity, transform',
+                                    transition: 'opacity 0.05s ease-out, transform 0.05s ease-out'
                                 }}
                             >
                                 {/* Horizontal Scroll Container */}
@@ -160,6 +169,7 @@ export const NewsView: React.FC = () => {
                                                 src={photoUrl}
                                                 alt={`${getNewsTitle(selectedNews)} - Photo ${index + 1}`}
                                                 className="w-full h-full object-contain"
+                                                loading="eager"
                                             />
                                         </div>
                                     ))}
@@ -191,7 +201,7 @@ export const NewsView: React.FC = () => {
                         )}
 
                         {/* Content - Scrolls over photo */}
-                        <div className="bg-white dark:bg-slate-900 min-h-screen rounded-t-3xl -mt-6 relative z-20 pt-6">
+                        <div className="bg-white dark:bg-slate-900 min-h-screen rounded-t-3xl relative z-20 pt-6">
                             {/* Type Badge */}
                             <div className="px-4 pb-2">
                                 <span className={`inline-block px-3 py-1 rounded-md text-xs font-bold uppercase ${selectedNews.type === NewsType.CONSTRUCTION ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'}`}>
