@@ -16,7 +16,7 @@ router.post('/', async (req, res) => {
         // For this example, we assume we are using a model that supports vision if image is provided
         // Or just text if only prompt.
         // Adjust model name as needed (e.g. gemini-1.5-flash)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
         let result;
         if (image) {
