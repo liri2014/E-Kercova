@@ -4,15 +4,61 @@ const multer = require('multer');
 const supabase = require('../supabaseClient');
 require('dotenv').config();
 
-// Configure Multer for memory storage (files are uploaded directly to Supabase Storage)
-const upload = multer({ storage: multer.memoryStorage() });
+// Allowed file types for photo uploads
+const ALLOWED_MIME_TYPES = [
+    'image/jpeg',
+    'image/jpg', 
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/heic',
+    'image/heif'
+];
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+// File filter to validate uploads
+const fileFilter = (req, file, cb) => {
+    if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error(`Invalid file type: ${file.mimetype}. Only images are allowed.`), false);
+    }
+};
+
+// Configure Multer with validation
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: MAX_FILE_SIZE,
+        files: 5 // Max 5 files
+    }
+});
+
+// Multer error handler
+const handleMulterError = (err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
+        }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({ error: 'Too many files. Maximum is 5 photos.' });
+        }
+        return res.status(400).json({ error: `Upload error: ${err.message}` });
+    }
+    if (err) {
+        return res.status(400).json({ error: err.message });
+    }
+    next();
+};
 
 /**
  * POST /api/reports
  * Accepts up to 5 photos (field name: photos) and report data.
  * Uploads each photo to Supabase Storage and stores report in database.
  */
-router.post('/', upload.array('photos', 5), async (req, res) => {
+router.post('/', upload.array('photos', 5), handleMulterError, async (req, res) => {
     try {
         const files = req.files; // array of uploaded files
         const { user_id, lat, lng, description } = req.body;

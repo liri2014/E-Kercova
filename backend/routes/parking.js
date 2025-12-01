@@ -2,6 +2,24 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../supabaseClient');
 
+// Middleware to verify admin API key
+const verifyAdminKey = (req, res, next) => {
+    const apiKey = req.headers['x-api-key'] || req.headers['x-admin-key'];
+    const validKey = process.env.ADMIN_API_KEY;
+
+    if (!validKey) {
+        // In development, allow if no key is set
+        console.warn('ADMIN_API_KEY not set - admin routes unprotected');
+        return next();
+    }
+
+    if (!apiKey || apiKey !== validKey) {
+        return res.status(401).json({ error: 'Unauthorized - Invalid admin API key' });
+    }
+
+    next();
+};
+
 router.post('/pay', async (req, res) => {
     try {
         const { user_id, zone_id, duration, plate_number, amount } = req.body;
@@ -57,8 +75,8 @@ router.post('/pay', async (req, res) => {
     }
 });
 
-// POST /api/parking/zones - Create new parking zone
-router.post('/zones', async (req, res) => {
+// POST /api/parking/zones - Create new parking zone (Admin only)
+router.post('/zones', verifyAdminKey, async (req, res) => {
     try {
         const { name, rate, capacity } = req.body;
 
@@ -81,8 +99,8 @@ router.post('/zones', async (req, res) => {
     }
 });
 
-// PUT /api/parking/zones/:id - Update parking zone
-router.put('/zones/:id', async (req, res) => {
+// PUT /api/parking/zones/:id - Update parking zone (Admin only)
+router.put('/zones/:id', verifyAdminKey, async (req, res) => {
     try {
         const { id } = req.params;
         const { name, rate, capacity } = req.body;
@@ -108,8 +126,8 @@ router.put('/zones/:id', async (req, res) => {
     }
 });
 
-// DELETE /api/parking/zones/:id - Delete parking zone
-router.delete('/zones/:id', async (req, res) => {
+// DELETE /api/parking/zones/:id - Delete parking zone (Admin only)
+router.delete('/zones/:id', verifyAdminKey, async (req, res) => {
     try {
         const { id } = req.params;
 
